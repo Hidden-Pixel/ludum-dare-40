@@ -9,12 +9,21 @@ Project uses following libraries:
   - [download windows installer][raylib-dl]
   - [wiki][raylib-wiki]
   - [cheatsheet][raylib-cheatsheet]
+  
+### General setup
+- Windows CMD
+  - Several CMD shortcut icons that execute different .bat script can be saved to your desktop with the following added to the target field in the cmd properties (i.e., right-click properties on CMD shortcut) -> %windir%\system32\cmd.exe /k "C:\Users\{username}\shell-win32.bat".
+  - A copy of that shell-*.bat file will need to exist in the loation specificed.
+  
+- Game Source Code / Libraries
+  - Source code is stored in game folder under the src folder.
+  - Libaries are contained in the game folder, src, and the libs folder - please do not move these around.
 
 #### Win32
-	- Compiler: MSVC[msvc] (visual studio / c and c++ installation only)
-	- Env Script: Shell-win32.bat
-		- environment is contained with cmd instance running another compiler could mess with set envs.
-	- Build Script: build-win32.bat
+- Compiler: [MSVC][msvc] (visual studio / c and c++ installation only)
+- Env Script: Shell-win32.bat
+  - environment is contained with cmd instance running another compiler could mess with set envs.
+- Build Script: build-win32.bat
 
 #### Linux/Mac
 TODO(nick)
@@ -25,6 +34,7 @@ TODO(nick)
 - Compiler: emcc
 
 ##### emcc - emscripten setup
+- Install SDK and run the shell-emcc.bat file provided by this repo in a cmd instance (NOTE: c:\emsdk install location is assumed, if not installed there change in script")
 
 ### Backup Plan Development Setup
 When in doubt, we should probably switch over to the threejs-alt folder that uses the javascript threejs library to get something done!
