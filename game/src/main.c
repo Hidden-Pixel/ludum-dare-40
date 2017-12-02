@@ -18,18 +18,22 @@
 #define PLAYER_SPEED        6.0f
 #define PLAYER_MAX_SHOOTS   10
 
-#define METEORS_SPEED       2
-#define MAX_BIG_METEORS     4
-#define MAX_MEDIUM_METEORS  8
-#define MAX_SMALL_METEORS   16
-
 #define global_variable static
 #define internal	static
 #define local_persist   static
 
+#define len(array)(sizeof(array)/sizeof(array[0]))
+
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
+
+typedef struct _titleMap
+{
+	Rectangle map[6][6];
+	int length;
+	int width;
+} TileMap;
 
 typedef struct _player
 {
@@ -57,22 +61,33 @@ typedef struct _shoot
 //------------------------------------------------------------------------------------
 global_variable int screenWidth = 800;
 global_variable int screenHeight = 450;
+global_variable char *windowTitle = "ludum dare 40";
 
 global_variable bool gameOver;
 global_variable bool pause;
 global_variable bool victory;
 
-global_variable Player player;
-global_variable Shoot shoot[PLAYER_MAX_SHOOTS];
+global_variable Camera GlobalCamera;
+global_variable TileMap GlobalMap;
+global_variable Player GlobalPlayer;
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
-internal void InitGame(void);         // Initialize game
-internal void UpdateGame(void);       // Update game (one frame)
-internal void DrawGame(void);         // Draw game (one frame)
-internal void UnloadGame(void);       // Unload game
-internal void UpdateDrawFrame(void);  // Update and Draw (one frame)
+internal void
+InitGame(Camera *gameCamera, TileMap* gameMap, Player *gamePlayer);
+
+internal void
+UpdateGame(void);
+
+internal void
+DrawGame(void);
+
+internal void
+UnloadGame(void);
+
+internal void
+UpdateDrawFrame(void);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -80,52 +95,64 @@ internal void UpdateDrawFrame(void);  // Update and Draw (one frame)
 int main(void)
 {
     // Initialization
-    //---------------------------------------------------------
-    InitWindow(screenWidth, screenHeight, "sample game: asteroids");
+    InitWindow(screenWidth, screenHeight, windowTitle);
 
-    InitGame();
+    InitGame(&GlobalCamera, &GlobalMap, &GlobalPlayer);
 
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
 #else
     SetTargetFPS(60);
-    //--------------------------------------------------------------------------------------
     
     // Main game loop
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
         // Update and Draw
-        //----------------------------------------------------------------------------------
         UpdateDrawFrame();
-        //----------------------------------------------------------------------------------
     }
 #endif
 
     // De-Initialization
-    //--------------------------------------------------------------------------------------
     UnloadGame();         // Unload loaded data (textures, sounds, models...)
     
     CloseWindow();        // Close window and OpenGL context
-    //--------------------------------------------------------------------------------------
-#if !defined(PLATFORM_ANDROID)
     return 0;
-#endif
 }
 
-// Initialize game variables
-void InitGame(void)
+internal void
+InitGame(Camera *gameCamera, TileMap *gameMap, Player *gamePlayer)
 {
-	// TODO
+	// camera setup
+	{
+		gameCamera->position.x = 16.0f;
+		gameCamera->position.y = 14.0f;
+		gameCamera->position.z = 16.0f;
+
+		gameCamera->target.x   = 0.0f;
+		gameCamera->target.y   = 0.0f;
+		gameCamera->target.z   = 0.0f;
+
+		gameCamera->up.x	   = 0.0f;
+		gameCamera->up.y	   = 1.0f;
+		gameCamera->up.z	   = 0.0f;
+
+		gameCamera->fovy	   = 45.0f;
+	}
+
+	// tile map setup
+	{
+
+	}
 }
 
-// Update game (one frame)
-void UpdateGame(void)
+internal void
+UpdateGame(void)
 {
        // TODO	
 }
 
-// Draw game (one frame)
-void DrawGame(void)
+internal void
+DrawGame(void)
 {
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -137,14 +164,15 @@ void DrawGame(void)
     EndDrawing();
 }
 
-// Unload game variables
-void UnloadGame(void)
+internal void
+UnloadGame(void)
 {
     // TODO: Unload all dynamic loaded data (textures, sounds, models...)
 }
 
 // Update and Draw (one frame)
-void UpdateDrawFrame(void)
+internal void
+UpdateDrawFrame(void)
 {
     UpdateGame();
     DrawGame();
