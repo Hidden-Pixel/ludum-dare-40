@@ -17,8 +17,8 @@
 // Defines
 //----------------------------------------------------------------------------------
 #define PLAYER_BASE_SIZE    20.0f
-#define PLAYER_SPEED        6.5f
-#define PLAYER_SPEED_INCREMENT 0.5f
+#define PLAYER_SPEED        100.0f
+#define PLAYER_SPEED_INCREMENT 0.1f
 #define PLAYER_MAX_SHOOTS   10
 
 #define global_variable static
@@ -192,9 +192,11 @@ InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gameP
 
 	// player setup
 	{
-		gamePlayer->rectangle.height = gamePlayer->rectangle.width = 50;
-		gamePlayer->rectangle.x = gamePlayer->rectangle.y = 0;
-		gamePlayer->color = BLACK;
+		gamePlayer->rectangle.height = gamePlayer->rectangle.width = 20;
+		gamePlayer->rectangle.x = gamePlayer->position.x = 64;
+		gamePlayer->rectangle.y = gamePlayer->position.y = 64;
+		gamePlayer->velocity.x = gamePlayer->velocity.y = 0;
+		gamePlayer->color = WHITE;
 		gamePlayer->maxVelocity = PLAYER_SPEED;
 	}
 }
