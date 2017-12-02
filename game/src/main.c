@@ -23,10 +23,19 @@
 #define local_persist   static
 
 #define len(array)(sizeof(array)/sizeof(array[0]))
+#define assert(expression) if(!(expression)) {*(int *)0 = 0;}
+#define NotImplemented assert(!"NotImplemented")
 
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
+
+// NOTE(nick): could probably replace with v2?
+typedef struct _screen
+{
+	int width;
+	int height;
+} Screen;
 
 typedef struct _titleMap
 {
@@ -59,23 +68,22 @@ typedef struct _shoot
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
-global_variable int screenWidth = 800;
-global_variable int screenHeight = 450;
 global_variable char *windowTitle = "ludum dare 40";
 
 global_variable bool gameOver;
 global_variable bool pause;
 global_variable bool victory;
 
-global_variable Camera GlobalCamera;
+global_variable Screen GlobalScreen;
 global_variable TileMap GlobalMap;
+global_variable Camera GlobalCamera;
 global_variable Player GlobalPlayer;
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Camera *gameCamera, TileMap* gameMap, Player *gamePlayer);
+InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gamePlayer);
 
 internal void
 UpdateGame(void);
@@ -93,34 +101,33 @@ UpdateDrawFrame(void);
 // Program main entry point
 //------------------------------------------------------------------------------------
 int main(void)
-{
-    // Initialization
-    InitWindow(screenWidth, screenHeight, windowTitle);
-
-    InitGame(&GlobalCamera, &GlobalMap, &GlobalPlayer);
+{	
+	GlobalScreen.width = 1280;
+	GlobalScreen.height = 720;
+	// Initialization
+    	InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
+    	InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer);
 
 #if defined(PLATFORM_WEB)
-    emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
+    	emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
 #else
-    SetTargetFPS(60);
+    	SetTargetFPS(60);
     
-    // Main game loop
-    while (!WindowShouldClose())    // Detect window close button or ESC key
-    {
-        // Update and Draw
-        UpdateDrawFrame();
-    }
+	while (!WindowShouldClose())    // Detect window close button or ESC key
+	{
+		UpdateDrawFrame();
+	}
 #endif
 
-    // De-Initialization
-    UnloadGame();         // Unload loaded data (textures, sounds, models...)
+    	// De-Initialization
+    	UnloadGame();         // Unload loaded data (textures, sounds, models...)
     
-    CloseWindow();        // Close window and OpenGL context
-    return 0;
+    	CloseWindow();        // Close window and OpenGL context
+    	return 0;
 }
 
 internal void
-InitGame(Camera *gameCamera, TileMap *gameMap, Player *gamePlayer)
+InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gamePlayer)
 {
 	// camera setup
 	{
@@ -141,39 +148,43 @@ InitGame(Camera *gameCamera, TileMap *gameMap, Player *gamePlayer)
 
 	// tile map setup
 	{
-
+		gameMap->width = floor(gameScreen->width / 6.0f);
+		gameMap->length = floor(gameScreen->height / 6.0f);
 	}
 }
 
 internal void
 UpdateGame(void)
 {
-       // TODO	
+	// TODO
+	NotImplemented;
 }
 
 internal void
 DrawGame(void)
 {
-    BeginDrawing();
-    ClearBackground(RAYWHITE);
+    	BeginDrawing();
+    	ClearBackground(RAYWHITE);
 
-    if (!gameOver)
-    {
-    }
+	if (!gameOver)
+	{
+		NotImplemented;
+	}
         
-    EndDrawing();
+    	EndDrawing();
 }
 
 internal void
 UnloadGame(void)
 {
-    // TODO: Unload all dynamic loaded data (textures, sounds, models...)
+    	// TODO: Unload all dynamic loaded data (textures, sounds, models...)
+	NotImplemented;
 }
 
 // Update and Draw (one frame)
 internal void
 UpdateDrawFrame(void)
 {
-    UpdateGame();
-    DrawGame();
+	UpdateGame();
+    	DrawGame();
 }
