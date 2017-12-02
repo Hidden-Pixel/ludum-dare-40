@@ -4,6 +4,7 @@
  */
 
 #include "raylib.h"
+#include "raymath.h"
 
 #include <math.h>
 
@@ -16,6 +17,7 @@
 //----------------------------------------------------------------------------------
 #define PLAYER_BASE_SIZE    20.0f
 #define PLAYER_SPEED        6.0f
+#define PLAYER_SPEED_INCREMENT 0.5f
 #define PLAYER_MAX_SHOOTS   10
 
 #define global_variable static
@@ -48,11 +50,13 @@ typedef struct _titleMap
 typedef struct _player
 {
     Vector2 position;
-    Vector2 speed;
-    float acceleration;
+    Vector2 velocity;
+    Vector2 acceleration;
     float rotation;
+	float maxVelocity;
     Vector3 collider;
     Color color;
+	Rectangle rectangle;
 } Player;
 
 typedef struct _shoot
@@ -87,16 +91,16 @@ internal void
 InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gamePlayer);
 
 internal void
-UpdateGame(void);
+UpdateGame(Player *gamePlayer);
 
 internal void
-DrawGame(TileMap *gameMap);
+DrawGame(TileMap *gameMap, Player *gamePlayer);
 
 internal void
 UnloadGame(void);
 
 internal void
-UpdateDrawFrame(TileMap *gameMap);
+UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -117,7 +121,7 @@ int main(void)
     
 	while (!WindowShouldClose())    // Detect window close button or ESC key
 	{
-		UpdateDrawFrame(&GlobalMap);
+		UpdateDrawFrame(&GlobalMap, &GlobalPlayer);
 	}
 #endif
 
@@ -168,23 +172,58 @@ InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gameP
 			}
 		}
 	}
+
+	// player setup
+	{
+		gamePlayer->rectangle.height = gamePlayer->rectangle.width = 50;
+		gamePlayer->rectangle.x = gamePlayer->rectangle.y = 0;
+		gamePlayer->color = BLACK;
+		gamePlayer->maxVelocity = PLAYER_SPEED;
+	}
 }
 
 internal void
-UpdateGame(void)
+UpdateGame(Player *gamePlayer)
 {
-	NotImplemented;
+	// update player input
+	{
+		if (IsKeyDown(KEY_RIGHT)) 
+		{
+			gamePlayer->acceleration.x = PLAYER_SPEED_INCREMENT;
+		}
+		if (IsKeyDown(KEY_LEFT))
+		{
+			gamePlayer->acceleration.x = -PLAYER_SPEED_INCREMENT;
+		}
+		if (IsKeyDown(KEY_UP))
+		{
+			gamePlayer->acceleration.y = PLAYER_SPEED_INCREMENT;
+		}
+		if (IsKeyDown(KEY_DOWN))
+		{
+			gamePlayer->acceleration.y = -PLAYER_SPEED_INCREMENT;
+		}
+
+		gamePlayer->velocity = Vector2Add(gamePlayer->acceleration, gamePlayer->velocity);
+		float magnitude = Vector2Length(gamePlayer->velocity);
+		if (magnitude > gamePlayer->maxVelocity)
+		{
+			Vector2Divide(&gamePlayer->velocity, magnitude);
+		}
+		gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
+	}
 }
 
 internal void
-DrawGame(TileMap *gameMap)
+DrawGame(TileMap *gameMap, Player *gamePlayer)
 {
-    	BeginDrawing();
-    	ClearBackground(RAYWHITE);
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
 
 	if (!gameOver)
 	{
-		// draw tile map
+		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
+		/*// draw tile map
 		{
 			int x;
 			int y;
@@ -204,6 +243,7 @@ DrawGame(TileMap *gameMap)
 				}
 			}
 		}
+		*/
 	}
         
     	EndDrawing();
@@ -218,8 +258,8 @@ UnloadGame(void)
 
 // Update and Draw (one frame)
 internal void
-UpdateDrawFrame(TileMap *gameMap)
+UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer)
 {
-	//UpdateGame();
-    	DrawGame(gameMap);
+	UpdateGame(gamePlayer);
+    DrawGame(gameMap, gamePlayer);
 }

@@ -7,4 +7,4 @@ export include="-I./include"
 export linker="-L../src/libs/"
 
 #gcc -o ../build/osx/main $cflags ./main.c $include $linker
-clang -I ~/src/raylib/src -L /usr/local/lib -L ~/src/raylib/release/libs/osx -lglfw -lraylib -framework GLUT -framework OpenGL -framework Cocoa ./main.c -o ../build/osx/main
+clang -g -I ~/src/raylib/src -L /usr/local/lib -L ~/src/raylib/release/libs/osx -lglfw -lraylib -framework GLUT -framework OpenGL -framework Cocoa -std=c99 ./main.c -o ../build/osx/main
