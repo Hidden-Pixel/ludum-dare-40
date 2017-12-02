@@ -41,8 +41,8 @@ typedef struct _screen
 typedef struct _titleMap
 {
 	Rectangle map[6][6];
-	int length;
-	int width;
+	int tileHeight;
+	int tileWidth;
 } TileMap;
 
 typedef struct _player
@@ -90,13 +90,13 @@ internal void
 UpdateGame(void);
 
 internal void
-DrawGame(void);
+DrawGame(TileMap *gameMap);
 
 internal void
 UnloadGame(void);
 
 internal void
-UpdateDrawFrame(void);
+UpdateDrawFrame(TileMap *gameMap);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -110,13 +110,14 @@ int main(void)
     	InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer);
 
 #if defined(PLATFORM_WEB)
+	// TODO(nick): might need to change this to have parameters? look at documentation 
     	emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
 #else
     	SetTargetFPS(60);
     
 	while (!WindowShouldClose())    // Detect window close button or ESC key
 	{
-		UpdateDrawFrame();
+		UpdateDrawFrame(&GlobalMap);
 	}
 #endif
 
@@ -149,15 +150,21 @@ InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gameP
 
 	// tile map setup
 	{
-		gameMap->width = floor(gameScreen->width / 6.0f);
-		gameMap->length = floor(gameScreen->height / 6.0f);
+		gameMap->tileWidth = floor(gameScreen->width / 6.0f);
+		gameMap->tileHeight = floor(gameScreen->height / 6.0f);
 		int x;
 		int y;
 		for (x = 0; x < len(gameMap->map); ++x)
 		{
 			for (y = 0; y < len2d(gameMap->map); ++y)
 			{
-				Rectangle temp = gameMap->map[x][y];	
+				gameMap->map[x][y].width = (gameMap->tileWidth) - 5;
+				gameMap->map[x][y].height = (gameMap->tileHeight) - 5;
+				//gameMap->map[x][y].width = 20;
+				//gameMap->map[x][y].height = 20;
+				// NOTE(nick): might need to add an offset value?
+				gameMap->map[x][y].x = (gameMap->tileWidth * x);
+				gameMap->map[x][y].y = (gameMap->tileHeight * y);
 			}
 		}
 	}
@@ -166,19 +173,37 @@ InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gameP
 internal void
 UpdateGame(void)
 {
-	// TODO
 	NotImplemented;
 }
 
 internal void
-DrawGame(void)
+DrawGame(TileMap *gameMap)
 {
     	BeginDrawing();
     	ClearBackground(RAYWHITE);
 
 	if (!gameOver)
 	{
-		NotImplemented;
+		// draw tile map
+		{
+			int x;
+			int y;
+			Color tempColor = RED;
+			for (x = 0; x < len(gameMap->map); ++x)
+			{
+				for (y = 0; y < len2d(gameMap->map); ++y)
+				{	
+					// TODO(nick): remove for testing
+					Rectangle temp = gameMap->map[x][y];
+					tempColor = RED;
+					if (((x + 1)) % 2 == 0)
+					{
+						tempColor = GREEN;
+					}
+					DrawRectangleRec(gameMap->map[x][y], tempColor);
+				}
+			}
+		}
 	}
         
     	EndDrawing();
@@ -193,8 +218,8 @@ UnloadGame(void)
 
 // Update and Draw (one frame)
 internal void
-UpdateDrawFrame(void)
+UpdateDrawFrame(TileMap *gameMap)
 {
-	UpdateGame();
-    	DrawGame();
+	//UpdateGame();
+    	DrawGame(gameMap);
 }
