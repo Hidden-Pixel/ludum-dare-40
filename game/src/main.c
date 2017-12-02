@@ -17,7 +17,7 @@
 // Defines
 //----------------------------------------------------------------------------------
 #define PLAYER_BASE_SIZE    20.0f
-#define PLAYER_SPEED        6.0f
+#define PLAYER_SPEED        6.5f
 #define PLAYER_SPEED_INCREMENT 0.5f
 #define PLAYER_MAX_SHOOTS   10
 
@@ -266,6 +266,8 @@ internal void
 UpdatePlayerPosition(Player *gamePlayer)
 {
 	Vector2 acceleration;
+	acceleration.x = 0;
+	acceleration.y = 0;
 	// update player input
 	if (IsKeyDown(KEY_RIGHT)) 
 	{
