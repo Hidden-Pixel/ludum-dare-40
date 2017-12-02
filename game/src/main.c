@@ -4,6 +4,7 @@
  */
 
 #include "raylib.h"
+#include "raymath.h"
 
 #include <math.h>
 
@@ -16,6 +17,7 @@
 //----------------------------------------------------------------------------------
 #define PLAYER_BASE_SIZE    20.0f
 #define PLAYER_SPEED        6.0f
+#define PLAYER_SPEED_INCREMENT 0.5f
 #define PLAYER_MAX_SHOOTS   10
 
 #define global_variable static
@@ -48,11 +50,13 @@ typedef struct _titleMap
 typedef struct _player
 {
     Vector2 position;
-    Vector2 speed;
-    float acceleration;
+    Vector2 velocity;
+    Vector2 acceleration;
     float rotation;
+	float maxVelocity;
     Vector3 collider;
     Color color;
+	Rectangle rectangle;
 } Player;
 
 typedef struct _shoot
@@ -99,19 +103,27 @@ internal void
 InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gamePlayer, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(void);
+UpdateGame(Player *gamePlayer);
 
 internal void
+<<<<<<< HEAD
 DrawGame(TileMap *gameMap, TileTypes *tileTypes);
+=======
+DrawGame(TileMap *gameMap, Player *gamePlayer);
+>>>>>>> e98f918e54afd00bc3a21d94fdb0bf309c87ca55
 
 internal void
 UnloadGame(void);
 
 internal void
+<<<<<<< HEAD
 UpdateDrawFrame(TileMap *gameMap, TileTypes *tileTypes);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
+=======
+UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer);
+>>>>>>> e98f918e54afd00bc3a21d94fdb0bf309c87ca55
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -132,7 +144,11 @@ int main(void)
     
 	while (!WindowShouldClose())    // Detect window close button or ESC key
 	{
+<<<<<<< HEAD
 		UpdateDrawFrame(&GlobalMap, &GlobalTileTypes);
+=======
+		UpdateDrawFrame(&GlobalMap, &GlobalPlayer);
+>>>>>>> e98f918e54afd00bc3a21d94fdb0bf309c87ca55
 	}
 #endif
 
@@ -182,15 +198,54 @@ InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gameP
 		SetMapRect(gameMap, 1, 8, 6, 4, 1);
 		SetMapRect(gameMap, 3, 5, 1, 4, 3);
 	}
+
+	// player setup
+	{
+		gamePlayer->rectangle.height = gamePlayer->rectangle.width = 50;
+		gamePlayer->rectangle.x = gamePlayer->rectangle.y = 0;
+		gamePlayer->color = BLACK;
+		gamePlayer->maxVelocity = PLAYER_SPEED;
+	}
 }
 
 internal void
-UpdateGame(void)
+UpdateGame(Player *gamePlayer)
 {
-	NotImplemented;
+	// update player input
+	{
+		if (IsKeyDown(KEY_RIGHT)) 
+		{
+			gamePlayer->acceleration.x += PLAYER_SPEED_INCREMENT;
+		}
+		if (IsKeyDown(KEY_LEFT))
+		{
+			gamePlayer->acceleration.x -= PLAYER_SPEED_INCREMENT;
+		}
+		if (IsKeyDown(KEY_UP))
+		{
+			gamePlayer->acceleration.y -= PLAYER_SPEED_INCREMENT;
+		}
+		if (IsKeyDown(KEY_DOWN))
+		{
+			gamePlayer->acceleration.y += PLAYER_SPEED_INCREMENT;
+		}
+
+		gamePlayer->velocity = Vector2Add(gamePlayer->acceleration, gamePlayer->velocity);
+		Vector2Scale(&gamePlayer->velocity, 0.9);
+		float magnitude = Vector2Length(gamePlayer->velocity);
+		if (magnitude > gamePlayer->maxVelocity)
+		{
+			Vector2Divide(&gamePlayer->velocity, magnitude);
+		}
+		gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
+		gamePlayer->rectangle.x = gamePlayer->position.x;
+		gamePlayer->rectangle.y = gamePlayer->position.y;
+		gamePlayer->acceleration.x = gamePlayer->acceleration.y = 0;
+	}
 }
 
 internal void
+<<<<<<< HEAD
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 {
 	int a;
@@ -204,13 +259,17 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 
 internal void
 DrawGame(TileMap *gameMap, TileTypes *tileTypes)
+=======
+DrawGame(TileMap *gameMap, Player *gamePlayer)
+>>>>>>> e98f918e54afd00bc3a21d94fdb0bf309c87ca55
 {
-    	BeginDrawing();
-    	ClearBackground(RAYWHITE);
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
 
 	if (!gameOver)
 	{
-		// draw tile map
+		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
+		/*// draw tile map
 		{
 			int x;
 			int y;
@@ -224,6 +283,7 @@ DrawGame(TileMap *gameMap, TileTypes *tileTypes)
 				}
 			}
 		}
+		*/
 	}
         
     	EndDrawing();
@@ -238,8 +298,16 @@ UnloadGame(void)
 
 // Update and Draw (one frame)
 internal void
+<<<<<<< HEAD
 UpdateDrawFrame(TileMap *gameMap, TileTypes *tileTypes)
 {
 	//UpdateGame();
     	DrawGame(gameMap, tileTypes);
 }
+=======
+UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer)
+{
+	UpdateGame(gamePlayer);
+    DrawGame(gameMap, gamePlayer);
+}
+>>>>>>> e98f918e54afd00bc3a21d94fdb0bf309c87ca55
