@@ -242,11 +242,10 @@ DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 				}
 			}
 		}
-
 		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
 	}
         
-    	EndDrawing();
+	EndDrawing();
 }
 
 internal void
