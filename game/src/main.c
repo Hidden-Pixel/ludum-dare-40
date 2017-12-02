@@ -23,6 +23,7 @@
 #define local_persist   static
 
 #define len(array)(sizeof(array)/sizeof(array[0]))
+#define len2d(array)(sizeof(array[0])/sizeof(array[0][0]))
 #define assert(expression) if(!(expression)) {*(int *)0 = 0;}
 #define NotImplemented assert(!"NotImplemented")
 
@@ -150,6 +151,15 @@ InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gameP
 	{
 		gameMap->width = floor(gameScreen->width / 6.0f);
 		gameMap->length = floor(gameScreen->height / 6.0f);
+		int x;
+		int y;
+		for (x = 0; x < len(gameMap->map); ++x)
+		{
+			for (y = 0; y < len2d(gameMap->map); ++y)
+			{
+				Rectangle temp = gameMap->map[x][y];	
+			}
+		}
 	}
 }
 
