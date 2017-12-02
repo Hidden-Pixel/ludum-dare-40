@@ -11,7 +11,7 @@
                 "-g",
                 "-I ${workspaceRoot}/game/src/include",
                 "-L /usr/local/lib",
-                "-L ~/src/raylib/release/libs/osx",
+                "-L ${workspaceRoot}/game/src/libs/osx",
                 "-lglfw",
                 "-lraylib",
                 "-framework GLUT",

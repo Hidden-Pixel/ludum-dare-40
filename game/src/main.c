@@ -52,7 +52,6 @@ typedef struct _player
 {
     Vector2 position;
     Vector2 velocity;
-    Vector2 acceleration;
     float rotation;
 	float maxVelocity;
     Vector3 collider;
@@ -226,7 +225,6 @@ DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 
 	if (!gameOver)
 	{
-		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
 		// draw tile map
 		{
 			int x;
@@ -241,6 +239,8 @@ DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 				}
 			}
 		}
+
+		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
 	}
         
     	EndDrawing();
@@ -249,7 +249,7 @@ DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 internal void
 UnloadGame(void)
 {
-    	// TODO: Unload all dynamic loaded data (textures, sounds, models...)
+    // TODO: Unload all dynamic loaded data (textures, sounds, models...)
 	//NotImplemented;
 }
 
@@ -258,31 +258,33 @@ internal void
 UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 {
 	UpdateGame(gamePlayer);
-    	DrawGame(gameMap, gamePlayer, tileTypes);
+    DrawGame(gameMap, gamePlayer, tileTypes);
 }
 
+// Updates the player's position based on the keyboard input
 internal void
 UpdatePlayerPosition(Player *gamePlayer)
 {
+	Vector2 acceleration;
 	// update player input
 	if (IsKeyDown(KEY_RIGHT)) 
 	{
-		gamePlayer->acceleration.x += PLAYER_SPEED_INCREMENT;
+		acceleration.x += PLAYER_SPEED_INCREMENT;
 	}
 	if (IsKeyDown(KEY_LEFT))
 	{
-		gamePlayer->acceleration.x -= PLAYER_SPEED_INCREMENT;
+		acceleration.x -= PLAYER_SPEED_INCREMENT;
 	}
 	if (IsKeyDown(KEY_UP))
 	{
-		gamePlayer->acceleration.y -= PLAYER_SPEED_INCREMENT;
+		acceleration.y -= PLAYER_SPEED_INCREMENT;
 	}
 	if (IsKeyDown(KEY_DOWN))
 	{
-		gamePlayer->acceleration.y += PLAYER_SPEED_INCREMENT;
+		acceleration.y += PLAYER_SPEED_INCREMENT;
 	}
 
-	gamePlayer->velocity = Vector2Add(gamePlayer->acceleration, gamePlayer->velocity);
+	gamePlayer->velocity = Vector2Add(acceleration, gamePlayer->velocity);
 	Vector2Scale(&gamePlayer->velocity, 0.9);
 	float magnitude = Vector2Length(gamePlayer->velocity);
 	if (magnitude > gamePlayer->maxVelocity)
@@ -292,5 +294,4 @@ UpdatePlayerPosition(Player *gamePlayer)
 	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
 	gamePlayer->rectangle.x = gamePlayer->position.x;
 	gamePlayer->rectangle.y = gamePlayer->position.y;
-	gamePlayer->acceleration.x = gamePlayer->acceleration.y = 0;
 }
