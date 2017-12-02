@@ -197,20 +197,23 @@ UpdateGame(Player *gamePlayer)
 		}
 		if (IsKeyDown(KEY_UP))
 		{
-			gamePlayer->acceleration.y = PLAYER_SPEED_INCREMENT;
+			gamePlayer->acceleration.y = -PLAYER_SPEED_INCREMENT;
 		}
 		if (IsKeyDown(KEY_DOWN))
 		{
-			gamePlayer->acceleration.y = -PLAYER_SPEED_INCREMENT;
+			gamePlayer->acceleration.y = PLAYER_SPEED_INCREMENT;
 		}
 
 		gamePlayer->velocity = Vector2Add(gamePlayer->acceleration, gamePlayer->velocity);
+		//Vector2Scale(&gamePlayer->velocity, 0.9);
 		float magnitude = Vector2Length(gamePlayer->velocity);
 		if (magnitude > gamePlayer->maxVelocity)
 		{
 			Vector2Divide(&gamePlayer->velocity, magnitude);
 		}
 		gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
+		gamePlayer->rectangle.x = gamePlayer->position.x;
+		gamePlayer->rectangle.y = gamePlayer->position.y;
 	}
 }
 
