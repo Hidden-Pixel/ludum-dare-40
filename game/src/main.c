@@ -3,10 +3,11 @@
  *
  */
 
+#include <math.h>
+
 #include "raylib.h"
 #include "raymath.h"
 
-#include <math.h>
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -106,24 +107,16 @@ internal void
 UpdateGame(Player *gamePlayer);
 
 internal void
-<<<<<<< HEAD
-DrawGame(TileMap *gameMap, TileTypes *tileTypes);
-=======
-DrawGame(TileMap *gameMap, Player *gamePlayer);
->>>>>>> e98f918e54afd00bc3a21d94fdb0bf309c87ca55
+DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes);
 
 internal void
 UnloadGame(void);
 
 internal void
-<<<<<<< HEAD
-UpdateDrawFrame(TileMap *gameMap, TileTypes *tileTypes);
+UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
-=======
-UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer);
->>>>>>> e98f918e54afd00bc3a21d94fdb0bf309c87ca55
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -144,11 +137,7 @@ int main(void)
     
 	while (!WindowShouldClose())    // Detect window close button or ESC key
 	{
-<<<<<<< HEAD
-		UpdateDrawFrame(&GlobalMap, &GlobalTileTypes);
-=======
-		UpdateDrawFrame(&GlobalMap, &GlobalPlayer);
->>>>>>> e98f918e54afd00bc3a21d94fdb0bf309c87ca55
+		UpdateDrawFrame(&GlobalMap, &GlobalPlayer, &GlobalTileTypes);
 	}
 #endif
 
@@ -245,7 +234,6 @@ UpdateGame(Player *gamePlayer)
 }
 
 internal void
-<<<<<<< HEAD
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 {
 	int a;
@@ -258,10 +246,7 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 }
 
 internal void
-DrawGame(TileMap *gameMap, TileTypes *tileTypes)
-=======
-DrawGame(TileMap *gameMap, Player *gamePlayer)
->>>>>>> e98f918e54afd00bc3a21d94fdb0bf309c87ca55
+DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 {
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -269,7 +254,7 @@ DrawGame(TileMap *gameMap, Player *gamePlayer)
 	if (!gameOver)
 	{
 		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
-		/*// draw tile map
+		// draw tile map
 		{
 			int x;
 			int y;
@@ -283,7 +268,6 @@ DrawGame(TileMap *gameMap, Player *gamePlayer)
 				}
 			}
 		}
-		*/
 	}
         
     	EndDrawing();
@@ -298,16 +282,8 @@ UnloadGame(void)
 
 // Update and Draw (one frame)
 internal void
-<<<<<<< HEAD
-UpdateDrawFrame(TileMap *gameMap, TileTypes *tileTypes)
-{
-	//UpdateGame();
-    	DrawGame(gameMap, tileTypes);
-}
-=======
-UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer)
+UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 {
 	UpdateGame(gamePlayer);
-    DrawGame(gameMap, gamePlayer);
+    	DrawGame(gameMap, gamePlayer, tileTypes);
 }
->>>>>>> e98f918e54afd00bc3a21d94fdb0bf309c87ca55
