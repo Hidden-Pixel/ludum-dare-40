@@ -17,8 +17,9 @@
 // Defines
 //----------------------------------------------------------------------------------
 #define PLAYER_BASE_SIZE    20.0f
-#define PLAYER_SPEED        100.0f
-#define PLAYER_SPEED_INCREMENT 0.1f
+#define PLAYER_SPEED        2.0f
+#define PLAYER_SPEED_INCREMENT 0.25f
+#define PLAYER_SPEED_DECAY 0.95f
 #define PLAYER_MAX_SHOOTS   10
 
 #define global_variable static
@@ -192,7 +193,7 @@ InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gameP
 
 	// player setup
 	{
-		gamePlayer->rectangle.height = gamePlayer->rectangle.width = 20;
+		gamePlayer->rectangle.height = gamePlayer->rectangle.width = PLAYER_BASE_SIZE;
 		gamePlayer->rectangle.x = gamePlayer->position.x = 64;
 		gamePlayer->rectangle.y = gamePlayer->position.y = 64;
 		gamePlayer->velocity.x = gamePlayer->velocity.y = 0;
@@ -287,9 +288,17 @@ UpdatePlayerPosition(Player *gamePlayer)
 	{
 		acceleration.y += PLAYER_SPEED_INCREMENT;
 	}
+	if (!IsKeyDown(KEY_UP) && !IsKeyDown(KEY_DOWN))
+	{
+		gamePlayer->velocity.y *= PLAYER_SPEED_DECAY;
+	}
+	if (!IsKeyDown(KEY_LEFT) && !IsKeyDown(KEY_RIGHT))
+	{
+		gamePlayer->velocity.x *= PLAYER_SPEED_DECAY;
+	}
 
 	gamePlayer->velocity = Vector2Add(acceleration, gamePlayer->velocity);
-	Vector2Scale(&gamePlayer->velocity, 0.9);
+
 	float magnitude = Vector2Length(gamePlayer->velocity);
 	if (magnitude > gamePlayer->maxVelocity)
 	{
