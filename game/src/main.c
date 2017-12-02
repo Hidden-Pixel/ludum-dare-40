@@ -189,19 +189,19 @@ UpdateGame(Player *gamePlayer)
 	{
 		if (IsKeyDown(KEY_RIGHT)) 
 		{
-			gamePlayer->acceleration.x = PLAYER_SPEED_INCREMENT;
+			gamePlayer->acceleration.x += PLAYER_SPEED_INCREMENT;
 		}
 		if (IsKeyDown(KEY_LEFT))
 		{
-			gamePlayer->acceleration.x = -PLAYER_SPEED_INCREMENT;
+			gamePlayer->acceleration.x -= PLAYER_SPEED_INCREMENT;
 		}
 		if (IsKeyDown(KEY_UP))
 		{
-			gamePlayer->acceleration.y = -PLAYER_SPEED_INCREMENT;
+			gamePlayer->acceleration.y -= PLAYER_SPEED_INCREMENT;
 		}
 		if (IsKeyDown(KEY_DOWN))
 		{
-			gamePlayer->acceleration.y = PLAYER_SPEED_INCREMENT;
+			gamePlayer->acceleration.y += PLAYER_SPEED_INCREMENT;
 		}
 
 		gamePlayer->velocity = Vector2Add(gamePlayer->acceleration, gamePlayer->velocity);
