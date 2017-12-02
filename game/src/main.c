@@ -94,26 +94,26 @@ global_variable bool victory;
 global_variable Screen GlobalScreen;
 global_variable TileMap GlobalMap;
 global_variable TileTypes GlobalTileTypes;
-global_variable Camera GlobalCamera;
+global_variable Camera2D GlobalCamera;
 global_variable Player GlobalPlayer;
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gamePlayer, TileTypes *gameTileTypes);
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Player *gamePlayer, TileTypes *gameTileTypes);
 
 internal void
 UpdateGame(Player *gamePlayer);
 
 internal void
-DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes);
+DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 UnloadGame(void);
 
 internal void
-UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes);
+UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
@@ -137,7 +137,7 @@ int main(void)
     
 	while (!WindowShouldClose())    // Detect window close button or ESC key
 	{
-		UpdateDrawFrame(&GlobalMap, &GlobalPlayer, &GlobalTileTypes);
+		UpdateDrawFrame(&GlobalMap, &GlobalPlayer, &GlobalTileTypes, &GlobalCamera);
 	}
 #endif
 
@@ -149,23 +149,15 @@ int main(void)
 }
 
 internal void
-InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gamePlayer, TileTypes *gameTileTypes)
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Player *gamePlayer, TileTypes *gameTileTypes)
 {
 	// camera setup
 	{
-		gameCamera->position.x = 16.0f;
-		gameCamera->position.y = 14.0f;
-		gameCamera->position.z = 16.0f;
-
 		gameCamera->target.x   = 0.0f;
 		gameCamera->target.y   = 0.0f;
-		gameCamera->target.z   = 0.0f;
+		gameCamera->rotation = 0.0f;
+		gameCamera->zoom = 1.0f;
 
-		gameCamera->up.x	   = 0.0f;
-		gameCamera->up.y	   = 1.0f;
-		gameCamera->up.z	   = 0.0f;
-
-		gameCamera->fovy	   = 45.0f;
 	}
 
 	// tile types setup
@@ -190,9 +182,9 @@ InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gameP
 
 	// player setup
 	{
-		gamePlayer->rectangle.height = gamePlayer->rectangle.width = 50;
+		gamePlayer->rectangle.height = gamePlayer->rectangle.width = 30;
 		gamePlayer->rectangle.x = gamePlayer->rectangle.y = 0;
-		gamePlayer->color = BLACK;
+		gamePlayer->color = WHITE;
 		gamePlayer->maxVelocity = PLAYER_SPEED;
 	}
 }
@@ -246,14 +238,18 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 }
 
 internal void
-DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
+DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     BeginDrawing();
-    ClearBackground(RAYWHITE);
+	gameCamera->target.x = gamePlayer->rectangle.x;
+	gameCamera->target.y = gamePlayer->rectangle.y;
+	gameCamera->offset.x = -gamePlayer->rectangle.x + GlobalScreen.width / 2;
+	gameCamera->offset.y = -gamePlayer->rectangle.y + GlobalScreen.height / 2;
+	ClearBackground(RAYWHITE);
+	Begin2dMode(*gameCamera);
 
 	if (!gameOver)
 	{
-		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
 		// draw tile map
 		{
 			int x;
@@ -268,9 +264,11 @@ DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 				}
 			}
 		}
+		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
 	}
-        
-    	EndDrawing();
+
+	End2dMode();
+	EndDrawing();
 }
 
 internal void
@@ -282,8 +280,8 @@ UnloadGame(void)
 
 // Update and Draw (one frame)
 internal void
-UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
+UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
 	UpdateGame(gamePlayer);
-    	DrawGame(gameMap, gamePlayer, tileTypes);
+	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
 }
