@@ -40,7 +40,7 @@ typedef struct _screen
 
 typedef struct _titleMap
 {
-	Rectangle map[6][6];
+	int map[20][20];
 	int tileHeight;
 	int tileWidth;
 } TileMap;
@@ -66,6 +66,17 @@ typedef struct _shoot
     Color color;
 } Shoot;
 
+typedef struct _tileProps
+{
+	Color color;
+	bool wall;
+} TileProps;
+
+typedef struct _tileTypes
+{
+	TileProps tiles[20];
+} TileTypes;
+
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
@@ -77,6 +88,7 @@ global_variable bool victory;
 
 global_variable Screen GlobalScreen;
 global_variable TileMap GlobalMap;
+global_variable TileTypes GlobalTileTypes;
 global_variable Camera GlobalCamera;
 global_variable Player GlobalPlayer;
 
@@ -84,19 +96,22 @@ global_variable Player GlobalPlayer;
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gamePlayer);
+InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gamePlayer, TileTypes *gameTileTypes);
 
 internal void
 UpdateGame(void);
 
 internal void
-DrawGame(TileMap *gameMap);
+DrawGame(TileMap *gameMap, TileTypes *tileTypes);
 
 internal void
 UnloadGame(void);
 
 internal void
-UpdateDrawFrame(TileMap *gameMap);
+UpdateDrawFrame(TileMap *gameMap, TileTypes *tileTypes);
+
+internal void
+SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -107,7 +122,7 @@ int main(void)
 	GlobalScreen.height = 720;
 	// Initialization
     	InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
-    	InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer);
+    	InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer, &GlobalTileTypes);
 
 #if defined(PLATFORM_WEB)
 	// TODO(nick): might need to change this to have parameters? look at documentation 
@@ -117,7 +132,7 @@ int main(void)
     
 	while (!WindowShouldClose())    // Detect window close button or ESC key
 	{
-		UpdateDrawFrame(&GlobalMap);
+		UpdateDrawFrame(&GlobalMap, &GlobalTileTypes);
 	}
 #endif
 
@@ -129,7 +144,7 @@ int main(void)
 }
 
 internal void
-InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gamePlayer)
+InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gamePlayer, TileTypes *gameTileTypes)
 {
 	// camera setup
 	{
@@ -148,25 +163,24 @@ InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gameP
 		gameCamera->fovy	   = 45.0f;
 	}
 
+	// tile types setup
+	{
+		gameTileTypes->tiles[0].color = BLACK;
+		gameTileTypes->tiles[1].color = DARKGREEN;
+		gameTileTypes->tiles[2].color = GRAY;
+		gameTileTypes->tiles[3].color = BROWN;
+
+		gameTileTypes->tiles[0].wall = true;
+		gameTileTypes->tiles[2].wall = true;
+	}
+
 	// tile map setup
 	{
-		gameMap->tileWidth = floor(gameScreen->width / 6.0f);
-		gameMap->tileHeight = floor(gameScreen->height / 6.0f);
-		int x;
-		int y;
-		for (x = 0; x < len(gameMap->map); ++x)
-		{
-			for (y = 0; y < len2d(gameMap->map); ++y)
-			{
-				gameMap->map[x][y].width = (gameMap->tileWidth) - 5;
-				gameMap->map[x][y].height = (gameMap->tileHeight) - 5;
-				//gameMap->map[x][y].width = 20;
-				//gameMap->map[x][y].height = 20;
-				// NOTE(nick): might need to add an offset value?
-				gameMap->map[x][y].x = (gameMap->tileWidth * x);
-				gameMap->map[x][y].y = (gameMap->tileHeight * y);
-			}
-		}
+		gameMap->tileWidth = floor(gameScreen->width / 32.0);
+		gameMap->tileHeight = gameMap->tileWidth;
+		SetMapRect(gameMap, 1, 1, 5, 5, 1);
+		SetMapRect(gameMap, 1, 8, 6, 4, 1);
+		SetMapRect(gameMap, 3, 5, 1, 4, 3);
 	}
 }
 
@@ -177,7 +191,19 @@ UpdateGame(void)
 }
 
 internal void
-DrawGame(TileMap *gameMap)
+SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
+{
+	int a;
+	int b;
+	for (a = x; a < x+w; a++) {
+		for (b = y; b < y+h; b++) {
+			gameMap->map[a][b] = type;
+		}
+	}
+}
+
+internal void
+DrawGame(TileMap *gameMap, TileTypes *tileTypes)
 {
     	BeginDrawing();
     	ClearBackground(RAYWHITE);
@@ -188,19 +214,13 @@ DrawGame(TileMap *gameMap)
 		{
 			int x;
 			int y;
-			Color tempColor = RED;
 			for (x = 0; x < len(gameMap->map); ++x)
 			{
 				for (y = 0; y < len2d(gameMap->map); ++y)
 				{	
 					// TODO(nick): remove for testing
-					Rectangle temp = gameMap->map[x][y];
-					tempColor = RED;
-					if (((x + 1)) % 2 == 0)
-					{
-						tempColor = GREEN;
-					}
-					DrawRectangleRec(gameMap->map[x][y], tempColor);
+					TileProps tile = tileTypes->tiles[gameMap->map[x][y]];
+					DrawRectangle(x * gameMap->tileWidth, y * gameMap->tileHeight, gameMap->tileWidth, gameMap->tileHeight, tile.color);
 				}
 			}
 		}
@@ -213,13 +233,13 @@ internal void
 UnloadGame(void)
 {
     	// TODO: Unload all dynamic loaded data (textures, sounds, models...)
-	NotImplemented;
+	//NotImplemented;
 }
 
 // Update and Draw (one frame)
 internal void
-UpdateDrawFrame(TileMap *gameMap)
+UpdateDrawFrame(TileMap *gameMap, TileTypes *tileTypes)
 {
 	//UpdateGame();
-    	DrawGame(gameMap);
+    	DrawGame(gameMap, tileTypes);
 }
