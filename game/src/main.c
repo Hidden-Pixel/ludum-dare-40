@@ -205,7 +205,7 @@ UpdateGame(Player *gamePlayer)
 		}
 
 		gamePlayer->velocity = Vector2Add(gamePlayer->acceleration, gamePlayer->velocity);
-		//Vector2Scale(&gamePlayer->velocity, 0.9);
+		Vector2Scale(&gamePlayer->velocity, 0.9);
 		float magnitude = Vector2Length(gamePlayer->velocity);
 		if (magnitude > gamePlayer->maxVelocity)
 		{
@@ -214,6 +214,7 @@ UpdateGame(Player *gamePlayer)
 		gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
 		gamePlayer->rectangle.x = gamePlayer->position.x;
 		gamePlayer->rectangle.y = gamePlayer->position.y;
+		gamePlayer->acceleration.x = gamePlayer->acceleration.y = 0;
 	}
 }
 
