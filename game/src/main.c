@@ -190,9 +190,9 @@ InitGame(Screen *gameScreen, Camera *gameCamera, TileMap* gameMap, Player *gameP
 
 	// player setup
 	{
-		gamePlayer->rectangle.height = gamePlayer->rectangle.width = 50;
+		gamePlayer->rectangle.height = gamePlayer->rectangle.width = 30;
 		gamePlayer->rectangle.x = gamePlayer->rectangle.y = 0;
-		gamePlayer->color = BLACK;
+		gamePlayer->color = WHITE;
 		gamePlayer->maxVelocity = PLAYER_SPEED;
 	}
 }
@@ -253,7 +253,6 @@ DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 
 	if (!gameOver)
 	{
-		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
 		// draw tile map
 		{
 			int x;
@@ -268,9 +267,10 @@ DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 				}
 			}
 		}
+		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
 	}
         
-    	EndDrawing();
+	EndDrawing();
 }
 
 internal void
@@ -285,5 +285,5 @@ internal void
 UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes)
 {
 	UpdateGame(gamePlayer);
-    	DrawGame(gameMap, gamePlayer, tileTypes);
+    DrawGame(gameMap, gamePlayer, tileTypes);
 }
