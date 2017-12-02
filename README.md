@@ -5,24 +5,24 @@ TODO(nick): game description here
 Brief summary of the list of dependencies and steps needed in order to build the project.
 
 Project uses following libraries:
-	- [raylib][raylib]
-		* [download windows installer][raylib-dl]
-		* [wiki][raylib-wiki]
-		* [cheatsheet][raylib-cheatsheet]
+- [raylib][raylib]
+  - [download windows installer][raylib-dl]
+  - [wiki][raylib-wiki]
+  - [cheatsheet][raylib-cheatsheet]
 
 #### Win32
 	- Compiler: MSVC[msvc] (visual studio / c and c++ installation only)
 	- Env Script: Shell-win32.bat
-		* environment is contained with cmd instance running another compiler could mess with set envs.
+		- environment is contained with cmd instance running another compiler could mess with set envs.
 	- Build Script: build-win32.bat
 
 #### Linux/Mac
 TODO(nick)
 
 #### Web
-	- SDK: emcscriptensdk
-		* [download sdk][emscripten-sdk]
-	- Compiler: emcc
+- SDK: emcscriptensdk
+  - [download sdk][emscripten-sdk]
+- Compiler: emcc
 
 ##### emcc - emscripten setup
 
