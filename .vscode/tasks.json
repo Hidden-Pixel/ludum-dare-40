@@ -9,14 +9,13 @@
             "command": "clang",
             "args": [
                 "-g",
-                "-I ~/src/raylib/src",
+                "-I ${workspaceRoot}/game/src/include",
                 "-L /usr/local/lib",
                 "-L ~/src/raylib/release/libs/osx",
                 "-lglfw",
                 "-lraylib",
                 "-framework GLUT",
                 "-framework OpenGL",
-                "-framework Cocoa",
                 "-std=c99",
                 "${workspaceRoot}/game/src/main.c",
                 "-o ${workspaceRoot}/game/build/osx/main"
