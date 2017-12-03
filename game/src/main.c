@@ -57,7 +57,6 @@ typedef struct _player
 	float maxVelocity;
     Vector3 collider;
     Color color;
-	Rectangle rectangle;
 } Player;
 
 typedef struct _shoot
@@ -185,9 +184,8 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Player *gam
 
 	// player setup
 	{
-		gamePlayer->rectangle.height = gamePlayer->rectangle.width = PLAYER_BASE_SIZE;
-		gamePlayer->rectangle.x = gamePlayer->position.x = 64;
-		gamePlayer->rectangle.y = gamePlayer->position.y = 64;
+		gamePlayer->position.x = 64;
+		gamePlayer->position.y = 64;
 		gamePlayer->velocity.x = gamePlayer->velocity.y = 0;
 		gamePlayer->color = WHITE;
 		gamePlayer->maxVelocity = PLAYER_SPEED;
@@ -216,10 +214,10 @@ internal void
 DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     BeginDrawing();
-	gameCamera->target.x = gamePlayer->rectangle.x;
-	gameCamera->target.y = gamePlayer->rectangle.y;
-	gameCamera->offset.x = -gamePlayer->rectangle.x + GlobalScreen.width / 2;
-	gameCamera->offset.y = -gamePlayer->rectangle.y + GlobalScreen.height / 2;
+	gameCamera->target.x = (int) gamePlayer->position.x;
+	gameCamera->target.y = (int) gamePlayer->position.y;
+	gameCamera->offset.x = (int) (-gamePlayer->position.x + GlobalScreen.width / 2);
+	gameCamera->offset.y = (int) (-gamePlayer->position.y + GlobalScreen.height / 2);
 	ClearBackground(RAYWHITE);
 	Begin2dMode(*gameCamera);
 
@@ -239,7 +237,7 @@ DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *g
 				}
 			}
 		}
-		DrawRectangleRec(gamePlayer->rectangle, gamePlayer->color);
+		DrawRectangle(gamePlayer->position.x - PLAYER_BASE_SIZE / 2, gamePlayer->position.y - PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, gamePlayer->color);
 	}
 
 	End2dMode();
@@ -302,6 +300,4 @@ UpdatePlayerPosition(Player *gamePlayer)
 		Vector2Divide(&gamePlayer->velocity, magnitude);
 	}
 	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
-	gamePlayer->rectangle.x = gamePlayer->position.x;
-	gamePlayer->rectangle.y = gamePlayer->position.y;
 }
