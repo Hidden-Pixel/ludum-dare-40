@@ -23,7 +23,7 @@
 #define PLAYER_SPEED_DECAY 0.95f
 #define PLAYER_MAX_SHOOTS   10
 
-#define COLLISION_BUFFER 20.0f
+#define COLLISION_BUFFER 10.0f
 
 #define global_variable static
 #define internal	static
@@ -389,7 +389,6 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			if (move.z) 
 			{
 				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
-				return;
 			}
 		}
 	}
