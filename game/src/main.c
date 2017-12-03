@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <stdlib.h>
+#include <math.h>
 
 #include "main.h"
 #include "entity.h"
@@ -79,12 +80,6 @@ GetTileAtLocation(TileMap *gameMap, Vector2 location);
 
 internal void 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
-
-internal inline int
-max (int a, int b);
-
-internal inline int
-min (int a, int b);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -385,14 +380,3 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 	}
 }
 
-internal inline int 
-min(int a, int b) 
-{
-	return (a < b) ? a : b;
-}
-
-internal inline int
-max (int a, int b) 
-{
-	return (a > b) ? a : b;
-}

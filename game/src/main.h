@@ -14,6 +14,22 @@
 
 #define LEVEL_SIZE 256
 
+#ifndef max
+internal inline int
+max (int a, int b) 
+{
+	return (a > b) ? a : b;
+}
+#endif
+
+#ifndef min
+internal inline int 
+min(int a, int b) 
+{
+	return (a < b) ? a : b;
+}
+#endif
+
 typedef struct _screen
 {
 	int width;
