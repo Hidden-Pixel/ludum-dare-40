@@ -12,6 +12,7 @@
 #include "entity.h"
 #include "collision.c"
 #include "levelgen.c"
+#include "vector2.h"
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -79,7 +80,7 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
 
-internal inline Vector2
+internal inline Vector2i
 GetTileAtLocation(TileMap *gameMap, Vector2 location);
 
 internal inline Vector2
@@ -312,7 +313,7 @@ internal void
 UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *gameMap)
 {
     Vector2 tileDifference = Vector2Subtract(gamePlayer.position, gameEnemy->position);
-	float dist = Vector2Length(tileDifference);
+	  float dist = Vector2Length(tileDifference);
     if (dist/gameMap->tileWidth <= 5)
     {
 		Vector2Scale(&tileDifference, gameEnemy->maxVelocity/dist);
@@ -320,10 +321,10 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
     }
 }
 
-internal inline Vector2
+internal inline Vector2i
 GetTileAtLocation(TileMap *gameMap, Vector2 location)
 {
-    return (Vector2){(int)(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
+    return (Vector2i){(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
 }
 
 
@@ -374,7 +375,7 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
 internal void 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes) 
 {
-	Vector2 currentTile = GetTileAtLocation(gameMap, entity->position);
+	Vector2i currentTile = GetTileAtLocation(gameMap, entity->position);
 
 	// if the entity's velocity is positive in the x it's moving right so start testing tiles to the left
 	// if the entity's velocity is postive in the y it's moving down, so start testing tiles above it
