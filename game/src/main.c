@@ -5,6 +5,8 @@
 
 #include <math.h>
 
+#include "collision.c"
+
 #include "raylib.h"
 #include "raymath.h"
 
@@ -99,7 +101,7 @@ internal void
 InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(Entity *gamePlayer);
+UpdateGame(TileMap *gameMap, Entity *gamePlayer);
 
 internal void
 DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -114,10 +116,14 @@ internal void
 UpdatePlayerPosition(Entity *gamePlayer);
 
 internal void
-UpdateEntityPosition(Entity *entity);
+UpdateEntityPosition(TileMap *gameMap, Entity *entity);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
+
+internal inline Vector2
+GetTileAtLocation(TileMap *gameMap, Vector2 location);
+
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -193,9 +199,9 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 }
 
 internal void
-UpdateGame(Entity *gamePlayer)
+UpdateGame(TileMap *gameMap, Entity *gamePlayer)
 {
-	UpdateEntityPosition(gamePlayer);
+	UpdateEntityPosition(gameMap, gamePlayer);
 }
 
 internal void
@@ -255,7 +261,7 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	UpdateGame(gamePlayer);
+	UpdateGame(gameMap, gamePlayer);
 	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
 }
 
@@ -263,9 +269,8 @@ UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Came
 internal void
 UpdatePlayerPosition(Entity *gamePlayer)
 {
-	Vector2 acceleration;
-	acceleration.x = 0;
-	acceleration.y = 0;
+	Vector2 acceleration = Vector2Zero();
+
 	// update player input
 	if (IsKeyDown(KEY_RIGHT)) 
 	{
@@ -302,6 +307,12 @@ UpdatePlayerPosition(Entity *gamePlayer)
 	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
 }
 
+internal inline Vector2
+GetTileAtLocation(TileMap *gameMap, Vector2 location)
+{
+	return (Vector2){(int)(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
+}
+
 internal void
 UpdateEnemyPosition(Entity *gameEntity)
 {
@@ -309,7 +320,7 @@ UpdateEnemyPosition(Entity *gameEntity)
 }
 
 internal void
-UpdateEntityPosition(Entity *entity)
+UpdateEntityPosition(TileMap *gameMap, Entity *entity)
 {
 	switch (entity->type)
 	{
