@@ -15,15 +15,20 @@
 //----------------------------------------------------------------------------------
 // Defines
 //----------------------------------------------------------------------------------
-#define PLAYER_BASE_SIZE    20.0f
-#define PLAYER_SPEED        2.0f
-#define PLAYER_SPEED_INCREMENT 0.25f
-#define PLAYER_SPEED_DECAY 0.95f
-#define PLAYER_MAX_SHOOTS   10
+#define PLAYER_BASE_SIZE        20.0f
+#define PLAYER_SPEED            2.0f
+#define PLAYER_SPEED_INCREMENT  0.25f
+#define PLAYER_SPEED_DECAY      0.95f
+
+#define ENEMY_DEFAULT_SIZE              20.0f
+#define ENEMY_DEFAULT_SPEED             1.5f
+#define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
+#define ENEMY_DEFAULT_SPEED_DECAY       0.97f
 
 #define global_variable static
-#define internal	static
+#define internal	    static
 #define local_persist   static 
+
 #define len(array)(sizeof(array)/sizeof(array[0]))
 #define len2d(array)(sizeof(array[0])/sizeof(array[0][0]))
 #define assert(expression) if(!(expression)) {*(int *)0 = 0;}
@@ -51,7 +56,7 @@ typedef enum _entityType
 {
 	NOTYPE      = 0x00,
 	PLAYER      = 0x01,
-    	WEAPON      = 0x03,
+    WEAPON      = 0x03,
 	ENEMY       = 0x02,
 } EntityType;
 
@@ -72,13 +77,12 @@ typedef enum _entitySubTypes
     // item types
     HEALTHPACK = 0xF0,
     AMMO       = 0xF0,
-
 } EntitySubType;
 
 typedef enum _entityAttributes
 {
-    NOATTRIBUTES,
-    DRAG = 0x01,
+    NOATTRIBUTES = 0x00,
+    DRAG         = 0x01,
 } EntityAttribute;
 
 typedef struct _entityProps
@@ -95,9 +99,15 @@ typedef struct _entity
     float rotation;
 	float maxVelocity;
     Vector3 collider;
-    EntityType type;
+    EntityProp props;
     Color color;
 } Entity;
+
+typedef struct _entityCollection
+{
+    Entity list[256];
+    int size;
+} EntityCollection;
 
 typedef struct _tileProps
 {
@@ -125,25 +135,25 @@ global_variable TileTypes GlobalTileTypes;
 global_variable Camera2D GlobalCamera;
 global_variable Entity GlobalPlayer;
 
-global_variable Entity GlobalEnemies[256];
+global_variable EntityCollection GlobalEnemies;
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, Entity *gameEnemies, TileTypes *gameTileTypes);
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *gameTileTypes);
 
 internal void
 UpdateGame(Entity *gamePlayer);
 
 internal void
-DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
+DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 UnloadGame(void);
 
 internal void
-UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
+UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 UpdatePlayerPosition(Entity *gamePlayer);
@@ -172,7 +182,7 @@ int main(void)
     SetTargetFPS(60);
 	while (!WindowShouldClose())
 	{
-		UpdateDrawFrame(&GlobalMap, &GlobalPlayer, &GlobalTileTypes, &GlobalCamera);
+		UpdateDrawFrame(&GlobalMap, &GlobalPlayer, &GlobalEnemies, &GlobalTileTypes, &GlobalCamera);
 	}
 #endif
 
@@ -184,7 +194,7 @@ int main(void)
 }
 
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, Entity gameEnemies[256], TileTypes *gameTileTypes)
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *gameTileTypes)
 {
 	// camera setup
 	{
@@ -192,7 +202,6 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 		gameCamera->target.y   = 0.0f;
 		gameCamera->rotation = 0.0f;
 		gameCamera->zoom = 1.0f;
-
 	}
 
 	// tile types setup
@@ -222,15 +231,24 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 		gamePlayer->velocity.x = gamePlayer->velocity.y = 0;
 		gamePlayer->color = WHITE;
 		gamePlayer->maxVelocity = PLAYER_SPEED;
-		gamePlayer->type = PLAYER;
+		gamePlayer->props.type = PLAYER;
 	}
 
     // enemies setup
     {
+        gameEnemies->size = 256;
         int i;
-        for (i = 0; i < len(gameEnemies); ++i)
+        for (i = 0; i < gameEnemies->size; ++i)
         {
-            //gameEnemies[i] =;
+            gameEnemies->list[i].position.x = 80;
+            gameEnemies->list[i].position.y = 80;
+            gameEnemies->list[i].velocity.x = 0;
+            gameEnemies->list[i].velocity.y = 0;
+            gameEnemies->list[i].color = PURPLE;
+            gameEnemies->list[i].maxVelocity = ENEMY_DEFAULT_SPEED;
+            gameEnemies->list[i].props.type = ENEMY; 
+            gameEnemies->list[i].props.subType = SKELETON;
+            gameEnemies->list[i].props.attributes = NOATTRIBUTES;
         }
     }
 }
@@ -254,7 +272,7 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 }
 
 internal void
-DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
+DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     BeginDrawing();
 	gameCamera->target.x = (int) gamePlayer->position.x;
@@ -274,13 +292,23 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *g
 			{
 				for (y = 0; y < len2d(gameMap->map); ++y)
 				{	
-					// TODO(nick): remove for testing
 					TileProps tile = tileTypes->tiles[gameMap->map[x][y]];
 					DrawRectangle(x * gameMap->tileWidth, y * gameMap->tileHeight, gameMap->tileWidth, gameMap->tileHeight, tile.color);
 				}
 			}
 		}
+
+        // draw player
 		DrawRectangle(gamePlayer->position.x - PLAYER_BASE_SIZE / 2, gamePlayer->position.y - PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, gamePlayer->color);
+
+        // draw enemies
+        int i;
+        for (i = 0; i < gameEnemies->size; ++i)
+        {
+            DrawRectangle(gameEnemies->list[i].position.x - ENEMY_DEFAULT_SPEED / 2, gameEnemies->list[i].position.y - ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, gameEnemies->list[i].color);
+            // TODO(nick): remove just one entity for now!
+            break;
+        }
 	}
 
 	End2dMode();
@@ -296,10 +324,10 @@ UnloadGame(void)
 
 // Update and Draw (one frame)
 internal void
-UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
+UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera)
 {
 	UpdateGame(gamePlayer);
-	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
+	DrawGame(gameMap, gamePlayer, gameEnemies, tileTypes, gameCamera);
 }
 
 // Updates the player's position based on the keyboard input
@@ -354,16 +382,21 @@ UpdateEnemyPosition(Entity *gameEntity)
 internal void
 UpdateEntityPosition(Entity *entity)
 {
-	switch (entity->type)
+	switch (entity->props.type)
 	{
 		case PLAYER:
 		{
 			UpdatePlayerPosition(entity);
 		} break;
 
+        case ENEMY:
+        {
+            NotImplemented;
+        } break;
+
 		default:
 		{
-
+            NotImplemented;
 		} break;
 	}
 }
