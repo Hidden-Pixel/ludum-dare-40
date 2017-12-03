@@ -167,7 +167,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
         // TODO(nick): figure out a way to spawn x amount of enemies near the player
         gameEntities->size = 256;
         int i;
-        for (i = PLAYER_INDEX + 1; i < gameEntities->size; ++i)
+        for (i = PLAYER_INDEX + 1; i < 2; ++i)
         {
             gameEntities->list[i].position.x = 80;
             gameEntities->list[i].position.y = 80;
@@ -244,8 +244,6 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
         for (i = (PLAYER_INDEX + 1); i < gameEntities->size; ++i)
         {
             DrawRectangle(gameEntities->list[i].position.x - ENEMY_DEFAULT_SPEED / 2, gameEntities->list[i].position.y - ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, gameEntities->list[i].color);
-            // TODO(nick): remove just one entity for now!
-            break;
         }
 	}
 	End2dMode();
@@ -314,15 +312,12 @@ UpdatePlayerPosition(float delta, Entity *gamePlayer)
 internal void
 UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *gameMap)
 {
-    // TODO(nick): complete this
-    Vector2i playerTilePosition = GetTileAtLocation(gameMap, gamePlayer.position);
-    Vector2i currentEnemyPosition = GetTileAtLocation(gameMap, gameEnemy->position);
-    Vector2 tileDifference = Vector2Subtract((Vector2){playerTilePosition.x, playerTilePosition.y}, (Vector2){playerTilePosition.x, playerTilePosition.y});
-    tileDifference.x = fabs(tileDifference.x);
-    tileDifference.y = fabs(tileDifference.y);
-    if (tileDifference.x <= 1.2f && tileDifference.y <= 1.2f)
+    Vector2 tileDifference = Vector2Subtract(gamePlayer.position, gameEnemy->position);
+	  float dist = Vector2Length(tileDifference);
+    if (dist/gameMap->tileWidth <= 5)
     {
-        // TODO
+		Vector2Scale(&tileDifference, gameEnemy->maxVelocity/dist);
+		gameEnemy->position = Vector2Add(gameEnemy->position, tileDifference);
     }
 }
 
@@ -345,6 +340,7 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
     int i;
     for (i = 0; i < gameEntities->size; ++i)
     {
+		bool validEntity = true;
         switch (gameEntities->list[i].props.type)
         {
             case PLAYER:
@@ -366,10 +362,12 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
 
             default:
             {
-                NotImplemented;
+				validEntity = false;
             } break;
         }
-        HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
+		if (validEntity) {
+			HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
+		}
     }
 }
 
