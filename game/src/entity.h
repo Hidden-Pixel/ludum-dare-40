@@ -5,6 +5,8 @@
 #ifndef __ENTITY_H__
 #define __ENTITY_H__ 1
 
+#define MAX_ENTITIES 256
+
 typedef enum _entityType
 {
     NOTYPE      = 0x00,
@@ -59,7 +61,7 @@ typedef struct _entity
 
 typedef struct _entityCollection
 {
-    Entity list[256];
+    Entity list[MAX_ENTITIES];
     int size;
     int capacity;
 } EntityCollection;

@@ -171,7 +171,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     // enemies setup
     {
         // TODO(nick): figure out a way to spawn x amount of enemies near the player
-        gameEntities->size = 256;
+        gameEntities->size = MAX_ENTITIES;
         int i;
         for (i = PLAYER_INDEX + 1; i < 2; ++i)
         {
