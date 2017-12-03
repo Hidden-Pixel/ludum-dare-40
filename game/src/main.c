@@ -84,12 +84,6 @@ typedef struct _tileTypes
 	TileProps tiles[20];
 } TileTypes;
 
-typedef struct _collisionInfo
-{
-	bool hasCollided;
-	Vector2 move;
-} CollisionInfo;
-
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
@@ -112,7 +106,7 @@ internal void
 InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Player *gamePlayer, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(Player *gamePlayer);
+UpdateGame(TileMap *gameMap, Player *gamePlayer);
 
 internal void
 DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -124,10 +118,13 @@ internal void
 UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
-UpdatePlayerPosition(Player *gamePlayer);
+UpdatePlayerPosition(Player *gamePlayer, TileMap *gameMap);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
+
+internal inline Vector2
+GetTileAtLocation(TileMap *gameMap, Vector2 location);
 
 
 //------------------------------------------------------------------------------------
@@ -204,9 +201,9 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Player *gam
 }
 
 internal void
-UpdateGame(Player *gamePlayer)
+UpdateGame(TileMap *gameMap, Player *gamePlayer)
 {
-	UpdatePlayerPosition(gamePlayer);
+	UpdatePlayerPosition(gamePlayer, gameMap);
 }
 
 internal void
@@ -266,17 +263,16 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	UpdateGame(gamePlayer);
+	UpdateGame(gameMap, gamePlayer);
 	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
 }
 
 // Updates the player's position based on the keyboard input
 internal void
-UpdatePlayerPosition(Player *gamePlayer)
+UpdatePlayerPosition(Player *gamePlayer, TileMap *gameMap)
 {
-	Vector2 acceleration;
-	acceleration.x = 0;
-	acceleration.y = 0;
+	Vector2 acceleration = Vector2Zero();
+
 	// update player input
 	if (IsKeyDown(KEY_RIGHT)) 
 	{
@@ -313,4 +309,17 @@ UpdatePlayerPosition(Player *gamePlayer)
 	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
 	gamePlayer->rectangle.x = gamePlayer->position.x;
 	gamePlayer->rectangle.y = gamePlayer->position.y;
+
+	Vector2 currentTile = GetTileAtLocation(gameMap, gamePlayer->position);
+	int i, j;
+	if (acceleration.x > 0 && acceleration.y > 0) 
+	{
+
+	}
+}
+
+internal inline Vector2
+GetTileAtLocation(TileMap *gameMap, Vector2 location)
+{
+	return (Vector2){(int)(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
 }
