@@ -56,7 +56,7 @@ internal void
 InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *globalEntities, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, TileTypes *tileTypes);
+UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -68,10 +68,10 @@ internal void
 UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
-UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes);
+UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
-UpdatePlayerPosition(float delta, Entity *gamePlayer);
+UpdatePlayerPosition(float delta, Entity *gamePlayer, Camera2D *gameCamera);
 
 internal void
 UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *);
@@ -182,9 +182,9 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 }
 
 internal void
-UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes)
+UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-    UpdateEntitiesPosition(delta, gameMap, gameEntities, tileTypes);
+    UpdateEntitiesPosition(delta, gameMap, gameEntities, tileTypes, gameCamera);
 }
 
 internal void
@@ -247,6 +247,10 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
             break;
         }
 	}
+
+
+	DrawLineV(gameEntities->list[0].position, gameEntities->list[0].direction, RED);
+
 	End2dMode();
 	EndDrawing();
 }
@@ -262,13 +266,13 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	UpdateGame(1, gameMap, gameEntities, tileTypes);
+	UpdateGame(1, gameMap, gameEntities, tileTypes, gameCamera);
 	DrawGame(gameMap, gameEntities, tileTypes, gameCamera);
 }
 
 // Updates the player's position based on the keyboard input
 internal void
-UpdatePlayerPosition(float delta, Entity *gamePlayer)
+UpdatePlayerPosition(float delta, Entity *gamePlayer, Camera2D *gameCamera)
 {
 	Vector2 acceleration;
 	acceleration.x = 0;
@@ -306,9 +310,15 @@ UpdatePlayerPosition(float delta, Entity *gamePlayer)
 	{
 		Vector2Scale(&gamePlayer->velocity, gamePlayer->maxVelocity/magnitude);
 	}
+
 	Vector2 frameVel = gamePlayer->velocity;
 	Vector2Scale(&frameVel, delta);
 	gamePlayer->position = Vector2Add(gamePlayer->position, frameVel);
+	Vector2 mousePosition = GetMousePosition();
+	mousePosition.x -= gameCamera->offset.x;
+	mousePosition.y -= gameCamera->offset.y;
+	gamePlayer->rotation = Vector2Angle(gamePlayer->position, mousePosition);
+	gamePlayer->direction = mousePosition;
 }
 
 internal void
@@ -341,7 +351,7 @@ GetTileCenter(TileMap *gameMap, int tileX, int tileY)
 }
 
 internal void
-UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes)
+UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     int i;
     for (i = 0; i < gameEntities->size; ++i)
@@ -352,7 +362,7 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
             {
                 if (i == PLAYER_INDEX)
                 {
-                    UpdatePlayerPosition(delta, &gameEntities->list[i]);
+                    UpdatePlayerPosition(delta, &gameEntities->list[i], gameCamera);
                 }
                 else
                 {

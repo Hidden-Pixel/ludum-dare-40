@@ -49,6 +49,7 @@ typedef struct _entity
 {
     Vector2 position;
     Vector2 velocity;
+    Vector2 direction;
     float rotation;
     float maxVelocity;
     Vector3 collider;
