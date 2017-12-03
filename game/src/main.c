@@ -57,7 +57,7 @@ internal void
 InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes);
+UpdateGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes);
 
 internal void
 DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -69,10 +69,13 @@ internal void
 UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
+UpdateEntityPosition(TileMap *gameMap, Entity *entity, EntityCollection *gameEnemies, TileTypes *tileTypes);
+
+internal void
 UpdatePlayerPosition(Entity *gamePlayer);
 
 internal void
-UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
+UpdateEnemyPosition(Entity *gameEnemy);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
@@ -157,6 +160,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 
     // enemies setup
     {
+        // TODO(nick): figure out a way to spawn x amount of enemies near the player
         gameEnemies->size = 256;
         int i;
         for (i = 0; i < gameEnemies->size; ++i)
@@ -175,9 +179,20 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 }
 
 internal void
-UpdateGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes)
+UpdateGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes)
 {
-	UpdateEntityPosition(gameMap, gamePlayer, tileTypes);
+    UpdatePlayerPosition(gamePlayer);
+    int i;
+    for (i = 0; i < gameEnemies->size; ++i)
+    {
+            Vector2 playerTilePosition = GetTileAtLocation(gameMap, gamePlayer->position);
+            Vector2 currentEnemyPosition;
+            currentEnemyPosition = GetTileAtLocation(gameMap, gameEnemies->list[i].position);
+            // TODO(nick): check to see if enemy is within 1 tiles from the entity - if so follow the player
+            UpdateEnemyPosition(&gameEnemies->list[i]);
+            // TODO(nick): just for testing - one enemy
+            break;
+    }
 }
 
 internal void
@@ -247,7 +262,7 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	UpdateGame(gameMap, gamePlayer, tileTypes);
+	UpdateGame(gameMap, gamePlayer, gameEnemies, tileTypes);
 	DrawGame(gameMap, gamePlayer, gameEnemies, tileTypes, gameCamera);
 }
 
@@ -294,16 +309,16 @@ UpdatePlayerPosition(Entity *gamePlayer)
 	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
 }
 
+internal void
+UpdateEnemyPosition(Entity *gameEnemy)
+{
+    //NotImplemented
+}
+
 internal inline Vector2
 GetTileAtLocation(TileMap *gameMap, Vector2 location)
 {
     return (Vector2){(int)(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
-}
-
-internal void
-UpdateEnemyPosition(Entity *gameEntity)
-{
-	NotImplemented;
 }
 
 internal void
@@ -318,7 +333,7 @@ UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 
         case ENEMY:
         {
-            NotImplemented;
+            UpdateEnemyPosition(entity);
         } break;
 
 		default:
@@ -328,6 +343,7 @@ UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 	}
 	HandleTileCollisions(gameMap, entity, tileTypes);
 }
+
 
 internal void 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes) 
