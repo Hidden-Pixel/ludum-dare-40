@@ -250,7 +250,6 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *g
 		DrawRectangle(gamePlayer->position.x - PLAYER_BASE_SIZE / 2, gamePlayer->position.y - PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, gamePlayer->color);
 	}
 
-	UpdateGame(gameMap, gamePlayer, tileTypes);
 	End2dMode();
 	EndDrawing();
 }
@@ -266,6 +265,7 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
+	UpdateGame(gameMap, gamePlayer, tileTypes);
 	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
 }
 
@@ -372,14 +372,14 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			if (move.z) 
 			{
 				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
-				if (move.x > 0) 
+				/*if (move.x > 0) 
 				{
 					entity->velocity.x = 0;
 				}
 				if (move.y > 0)
 				{
 					entity->velocity.y = 0;
-				}
+				}*/
 			}
 		}
 	}
