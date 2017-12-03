@@ -250,7 +250,6 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *g
 		DrawRectangle(gamePlayer->position.x - PLAYER_BASE_SIZE / 2, gamePlayer->position.y - PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, gamePlayer->color);
 	}
 
-	UpdateGame(gameMap, gamePlayer, tileTypes);
 	End2dMode();
 	EndDrawing();
 }
@@ -266,8 +265,8 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	//UpdateGame(gameMap, gamePlayer, tileTypes);
 	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
+	UpdateGame(gameMap, gamePlayer, tileTypes);
 }
 
 // Updates the player's position based on the keyboard input
@@ -347,31 +346,15 @@ internal void
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes) 
 {
 	Vector2 currentTile = GetTileAtLocation(gameMap, entity->position);
-	int x, y;
-	x = ((int)currentTile.x)-1;
-	y = ((int)currentTile.y)-1;
-	/*int x, y;
+
 	// if the entity's velocity is positive in the x it's moving right so start testing tiles to the left
-	if (entity->velocity.x > 0)
-	{
-		x = ((int)currentTile.x)-1;
-	}
-	else
-	{
-		x = ((int)currentTile.x)+1;
-	}
-
 	// if the entity's velocity is postive in the y it's moving down, so start testing tiles above it
-	if (entity->velocity.y > 0)
-	{
-		y = ((int)currentTile.y)-1;
-	}
-	else 
-	{
-		y = ((int)currentTile.y)+1;
-	}*/
+	int x = (entity->velocity.x > 0) ? ((int)currentTile.x)-1 : ((int)currentTile.x)+1;
+	int xDir = (entity->velocity.x > 0) ? 1 : -1;
+	int y = (entity->velocity.y > 0) ? ((int)currentTile.y)-1 : ((int)currentTile.y)+1;
+	int yDir = (entity->velocity.y > 0) ? 1 : -1;
 
-	// check all tiles around player
+	// check all tiles around the entity
 	for (int i = 0; i < 3; i++)
 	{
 		for (int j = 0; j < 3; j++) 
@@ -389,6 +372,14 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			if (move.z) 
 			{
 				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
+				if (move.x > 0) 
+				{
+					entity->velocity.x = 0;
+				}
+				if (move.y > 0)
+				{
+					entity->velocity.y = 0;
+				}
 			}
 		}
 	}
