@@ -134,13 +134,12 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 
 	// tile map setup
 	{
-		GenerateLevel(200, 200, gameMap->map);
+		GenerateLevel(50, 100, gameMap->map);
 		gameMap->tileWidth = floor(gameScreen->width / 32.0);
 		gameMap->tileHeight = gameMap->tileWidth;
 		SetMapRect(gameMap, 1, 1, 5, 5, 1);
 		SetMapRect(gameMap, 1, 8, 6, 4, 1);
 		SetMapRect(gameMap, 3, 5, 1, 4, 3);
-		SetMapRect(gameMap, 3, 5, 200, 3, 3);
 	}
 
 	// player setup

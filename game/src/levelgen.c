@@ -7,7 +7,7 @@
 #define ISLAND_MIN_SIZE 3
 
 internal void
-GenerateLevel(int numIslands, int paths, int level[256][256]) {
+GenerateLevel(int numIslands, int paths, int level[LEVEL_SIZE][LEVEL_SIZE]) {
 	
 	int q, w;
 	for (q = 0; q < LEVEL_SIZE; q++) {
@@ -24,10 +24,10 @@ GenerateLevel(int numIslands, int paths, int level[256][256]) {
 			bool overlap = false;
 			int width = ISLAND_MIN_SIZE + rand() % (ISLAND_MAX_SIZE - ISLAND_MIN_SIZE);
 			int height = ISLAND_MIN_SIZE + rand() % (ISLAND_MAX_SIZE - ISLAND_MIN_SIZE);
-			int maxX = LEVEL_SIZE - width;
-			int maxY = LEVEL_SIZE - height;
-			int pX = rand() % maxX;
-			int pY = rand() % maxY;
+			int maxX = LEVEL_SIZE - width - 1;
+			int maxY = LEVEL_SIZE - height - 1;
+			int pX = (rand() % maxX) + 1;
+			int pY = (rand() % maxY) + 1;
 			int x, y;
 			for (x = -1; x < width + 1; x++) {
 				for (y = -1; y < height + 1; y++) {
@@ -44,7 +44,6 @@ GenerateLevel(int numIslands, int paths, int level[256][256]) {
 			if (overlap) {
 				continue;
 			}
-
 
 			for (x = 0; x < width; x++) {
 				for (y = 0; y < height; y++) {
