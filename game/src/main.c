@@ -237,7 +237,6 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, Ti
             break;
         }
 	}
-
 	End2dMode();
 	EndDrawing();
 }
@@ -353,11 +352,13 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 	{
 		for (int j = 0; j < 3; j++) 
 		{
-			TileProps tp = tileTypes->tiles[gameMap->map[x+(i*xDir)][y+(j*yDir)]];
+			int testX = max(min(x+i*xDir, LEVEL_SIZE), 0);
+			int testY = max(min(y+j*yDir, LEVEL_SIZE), 0);
+			TileProps tp = tileTypes->tiles[gameMap->map[testX][testY]];
 			if (!tp.wall)
 				continue;
 
-			Vector2 tileTl = (Vector2){gameMap->tileWidth*(x+(i*xDir)), gameMap->tileWidth*(y+(j*yDir))};
+			Vector2 tileTl = (Vector2){gameMap->tileWidth*testX, gameMap->tileWidth*testY};
 			Vector2 tileBr = (Vector2){tileTl.x+gameMap->tileWidth, tileTl.y+gameMap->tileHeight};
 			//TODO: Use collision box here, not entity's box
 			Vector2 entityTl = (Vector2){entity->position.x-(PLAYER_BASE_SIZE/2), entity->position.y-(COLLISION_BUFFER/2)};
@@ -366,14 +367,14 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			if (move.z) 
 			{
 				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
-				/*if (move.x > 0) 
+				if (move.x != 0)
 				{
 					entity->velocity.x = 0;
 				}
-				if (move.y > 0)
+				if (move.y != 0)
 				{
 					entity->velocity.y = 0;
-				}*/
+				}
 			}
 		}
 	}
