@@ -208,8 +208,8 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, Ti
 			int y;
 			int bX = -gameCamera->offset.x / gameMap->tileWidth;
 			int bY = -gameCamera->offset.y / gameMap->tileHeight;
-			int eX = bX + GlobalScreen.width / gameMap->tileWidth;
-			int eY = bY + GlobalScreen.height / gameMap->tileHeight;
+			int eX = bX + 1 + GlobalScreen.width / gameMap->tileWidth;
+			int eY = bY + 1 + GlobalScreen.height / gameMap->tileHeight;
 			bX = max(min(bX, LEVEL_SIZE), 0);
 			bY = max(min(bY, LEVEL_SIZE), 0);
 			eX = max(min(eX, LEVEL_SIZE), 0);
