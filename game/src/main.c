@@ -323,3 +323,4 @@ UpdateEntityPosition(Entity *entity)
 
 		} break;
 	}
+}
