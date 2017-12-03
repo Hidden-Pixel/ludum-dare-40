@@ -137,13 +137,12 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 
 	// tile map setup
 	{
-		GenerateLevel(200, 200, gameMap->map);
+		GenerateLevel(50, 100, gameMap->map);
 		gameMap->tileWidth = floor(gameScreen->width / 32.0);
 		gameMap->tileHeight = gameMap->tileWidth;
 		SetMapRect(gameMap, 1, 1, 5, 5, 1);
 		SetMapRect(gameMap, 1, 8, 6, 4, 1);
 		SetMapRect(gameMap, 3, 5, 1, 4, 3);
-		SetMapRect(gameMap, 3, 5, 200, 3, 3);
 	}
 
 	// player setup
@@ -213,8 +212,8 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, Ti
 			int y;
 			int bX = -gameCamera->offset.x / gameMap->tileWidth;
 			int bY = -gameCamera->offset.y / gameMap->tileHeight;
-			int eX = bX + GlobalScreen.width / gameMap->tileWidth;
-			int eY = bY + GlobalScreen.height / gameMap->tileHeight;
+			int eX = bX + 1 + GlobalScreen.width / gameMap->tileWidth;
+			int eY = bY + 1 + GlobalScreen.height / gameMap->tileHeight;
 			bX = max(min(bX, LEVEL_SIZE), 0);
 			bY = max(min(bY, LEVEL_SIZE), 0);
 			eX = max(min(eX, LEVEL_SIZE), 0);

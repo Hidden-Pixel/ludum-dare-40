@@ -16,7 +16,7 @@
 #define assert(expression) if(!(expression)) {*(int *)0 = 0;}
 #define NotImplemented assert(!"NotImplemented")
 
-#define LEVEL_SIZE 256
+#define LEVEL_SIZE 100
 
 #ifndef max
 internal inline int
