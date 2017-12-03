@@ -89,6 +89,12 @@ GetTileCenter(TileMap *gameMap, int tileX, int tileY);
 internal void 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
+internal int 
+AddEntity(EntityCollection *collection, Entity entity);
+
+internal void
+RemoveEntity(EntityCollection *collection, int entityIx);
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -425,3 +431,23 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 	}
 }
 
+internal int 
+AddEntity(EntityCollection *collection, Entity entity)
+{
+	if (collection->size >= 256)
+		InvalidCodePath;
+
+	collection->list[collection->size] = entity;
+	collection->capacity++;
+	return collection->capacity-1;
+}
+
+internal void
+RemoveEntity(EntityCollection *collection, int entityIx)
+{
+	collection->list[entityIx] = collection->list[collection->capacity-1];
+	collection->list[collection->capacity-1].props.type = NOTYPE;
+	collection->list[collection->capacity-1].props.subType = NOSUBTYPE;
+	collection->list[collection->capacity-1].props.attributes = NOATTRIBUTES;
+	collection->capacity--;
+}

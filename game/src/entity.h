@@ -61,6 +61,7 @@ typedef struct _entityCollection
 {
     Entity list[256];
     int size;
+    int capacity;
 } EntityCollection;
 
 #endif
