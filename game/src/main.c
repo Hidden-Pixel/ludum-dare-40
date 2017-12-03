@@ -69,7 +69,7 @@ internal void
 UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
-UpdateEntityPosition(TileMap *gameMap, Entity *entity, EntityCollection *gameEnemies, TileTypes *tileTypes);
+UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
 internal void
 UpdatePlayerPosition(Entity *gamePlayer);
@@ -181,7 +181,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 internal void
 UpdateGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes)
 {
-    UpdatePlayerPosition(gamePlayer);
+    UpdateEntityPosition(gameMap, gamePlayer, tileTypes);
     int i;
     for (i = 0; i < gameEnemies->size; ++i)
     {
@@ -189,7 +189,7 @@ UpdateGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, 
             Vector2 currentEnemyPosition;
             currentEnemyPosition = GetTileAtLocation(gameMap, gameEnemies->list[i].position);
             // TODO(nick): check to see if enemy is within 1 tiles from the entity - if so follow the player
-            UpdateEnemyPosition(&gameEnemies->list[i]);
+            UpdateEntityPosition(gameMap, &gameEnemies->list[i], tileTypes);
             // TODO(nick): just for testing - one enemy
             break;
     }
