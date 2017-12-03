@@ -12,7 +12,7 @@
 #include "entity.h"
 #include "collision.c"
 #include "levelgen.c"
-#include "vector2.h"
+#include "vector2i.h"
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
