@@ -22,7 +22,6 @@ RectCollision3(Vector2 r1tl, Vector2 r1br, Vector2 r2tl, Vector2 r2br)
 	Vector2Divide(&avgSize, 2);
 	DrawRectangle(r1tl.x, r1tl.y, r1Size.x, r1Size.y, RED);
 	DrawRectangle(r2tl.x, r2tl.y, r2Size.x, r2Size.y, BLUE);
-	//return difference.x < avgSize.x && difference.y < avgSize.y;
 	Vector3 move = Vector3Zero();
 	move.z = (difference.x < avgSize.x && difference.y < avgSize.y);
 	if (!move.z) 
