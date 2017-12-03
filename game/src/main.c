@@ -5,8 +5,6 @@
 
 #include <math.h>
 
-#include "collision.c"
-
 #include "raylib.h"
 #include "raymath.h"
 
@@ -25,8 +23,7 @@
 
 #define global_variable static
 #define internal	static
-#define local_persist   static
-
+#define local_persist   static 
 #define len(array)(sizeof(array)/sizeof(array[0]))
 #define len2d(array)(sizeof(array[0])/sizeof(array[0][0]))
 #define assert(expression) if(!(expression)) {*(int *)0 = 0;}
@@ -52,10 +49,44 @@ typedef struct _titleMap
 
 typedef enum _entityType
 {
-	NONE   = 0x0000,
-	PLAYER = 0x0001,
-	ENEMY  = 0x0002,
+	NOTYPE      = 0x00,
+	PLAYER      = 0x01,
+    WEAPON      = 0x03,
+	ENEMY       = 0x02,
 } EntityType;
+
+typedef enum _entitySubTypes
+{
+    NOSUBTYPE = 0x00,
+
+    // enemy types
+    BOULDER   = 0x01
+    SKELETON  = 0x02,
+    SOLIDER   = 0X03,
+
+    // weapon types
+    WHIP      = 0x0F,
+    REVOVLER  = 0x10,
+    BULLET    = 0x11,
+
+    // item types
+    HEALTHPACK = 0xF0;
+    AMMO       = 0xF0;
+
+} EntitySubType;
+
+typedef enum _entityAttributes
+{
+    NOATTRIBUTES,
+    DRAG = 0x01,
+} EntityAttribute;
+
+typedef struct _entityProps
+{
+    EntityType type;
+    EntitySubType subType;
+    EntityAttribute attributes;
+} EntityProp;
 
 typedef struct _entity
 {
@@ -64,7 +95,7 @@ typedef struct _entity
     float rotation;
 	float maxVelocity;
     Vector3 collider;
-	EntityType type;
+    EntityType type;
     Color color;
 } Entity;
 
@@ -94,14 +125,16 @@ global_variable TileTypes GlobalTileTypes;
 global_variable Camera2D GlobalCamera;
 global_variable Entity GlobalPlayer;
 
+global_variable Entity GlobalEnemies[256];
+
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, TileTypes *gameTileTypes);
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, Entity *gameEnemies, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(TileMap *gameMap, Entity *gamePlayer);
+UpdateGame(Entity *gamePlayer);
 
 internal void
 DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -116,47 +149,42 @@ internal void
 UpdatePlayerPosition(Entity *gamePlayer);
 
 internal void
-UpdateEntityPosition(TileMap *gameMap, Entity *entity);
+UpdateEntityPosition(Entity *entity);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
-
-internal inline Vector2
-GetTileAtLocation(TileMap *gameMap, Vector2 location);
-
 
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
 int main(void)
-{	
+{
 	GlobalScreen.width = 1280;
 	GlobalScreen.height = 720;
 	// Initialization
     InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
-    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer, &GlobalTileTypes);
+    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer, &GlobalEnemies, &GlobalTileTypes);
 
 #if defined(PLATFORM_WEB)
 	// TODO(nick): might need to change this to have parameters? look at documentation 
     emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
 #else
     SetTargetFPS(60);
-    
-	while (!WindowShouldClose())    // Detect window close button or ESC key
+	while (!WindowShouldClose())
 	{
 		UpdateDrawFrame(&GlobalMap, &GlobalPlayer, &GlobalTileTypes, &GlobalCamera);
 	}
 #endif
 
     // De-Initialization
-    UnloadGame();         // Unload loaded data (textures, sounds, models...)
-    
-    CloseWindow();        // Close window and OpenGL context
+    UnloadGame();
+    CloseWindow();
+
     return 0;
 }
 
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, TileTypes *gameTileTypes)
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, Entity gameEnemies[256], TileTypes *gameTileTypes)
 {
 	// camera setup
 	{
@@ -169,7 +197,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 
 	// tile types setup
 	{
-		gameTileTypes->tiles[0].color = BLACK;
+        gameTileTypes->tiles[0].color = BLACK;
 		gameTileTypes->tiles[1].color = DARKGREEN;
 		gameTileTypes->tiles[2].color = GRAY;
 		gameTileTypes->tiles[3].color = BROWN;
@@ -196,12 +224,21 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 		gamePlayer->maxVelocity = PLAYER_SPEED;
 		gamePlayer->type = PLAYER;
 	}
+
+    // enemies setup
+    {
+        int i;
+        for (i = 0; i < len(gameEnemies); ++i)
+        {
+            //gameEnemies[i] =;
+        }
+    }
 }
 
 internal void
-UpdateGame(TileMap *gameMap, Entity *gamePlayer)
+UpdateGame(Entity *gamePlayer)
 {
-	UpdateEntityPosition(gameMap, gamePlayer);
+	UpdateEntityPosition(gamePlayer);
 }
 
 internal void
@@ -261,7 +298,7 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	UpdateGame(gameMap, gamePlayer);
+	UpdateGame(gamePlayer);
 	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
 }
 
@@ -269,8 +306,9 @@ UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Came
 internal void
 UpdatePlayerPosition(Entity *gamePlayer)
 {
-	Vector2 acceleration = Vector2Zero();
-
+	Vector2 acceleration;
+	acceleration.x = 0;
+	acceleration.y = 0;
 	// update player input
 	if (IsKeyDown(KEY_RIGHT)) 
 	{
@@ -307,12 +345,6 @@ UpdatePlayerPosition(Entity *gamePlayer)
 	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
 }
 
-internal inline Vector2
-GetTileAtLocation(TileMap *gameMap, Vector2 location)
-{
-	return (Vector2){(int)(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
-}
-
 internal void
 UpdateEnemyPosition(Entity *gameEntity)
 {
@@ -320,7 +352,7 @@ UpdateEnemyPosition(Entity *gameEntity)
 }
 
 internal void
-UpdateEntityPosition(TileMap *gameMap, Entity *entity)
+UpdateEntityPosition(Entity *entity)
 {
 	switch (entity->type)
 	{
