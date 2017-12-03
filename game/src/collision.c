@@ -1,9 +1,7 @@
-#include "raylib.h"
-#include "raymath.h"
-
-#define global_variable static
-#define internal	static
-#define local_persist   static
+/*
+ *  collision.c
+ *
+ */
 
 // Output vector 3 details the move r2 has to make to no longer collide with r1.  The z of the vector 3 will be true (positive int) if it has collided, false (0) if it has not.
 internal Vector3
