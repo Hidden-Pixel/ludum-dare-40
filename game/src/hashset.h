@@ -5,6 +5,6 @@
 typedef struct _hashSetTiles
 {
     unsigned int Key;
-    Vector
+    Vector2 vector;
 } HashSetTiles;
 
