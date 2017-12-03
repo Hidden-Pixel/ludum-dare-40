@@ -249,9 +249,6 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
         }
 	}
 
-
-	DrawLineV(gameEntities->list[0].position, gameEntities->list[0].direction, RED);
-
 	End2dMode();
 	EndDrawing();
 }
