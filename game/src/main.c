@@ -250,6 +250,7 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *g
 		DrawRectangle(gamePlayer->position.x - PLAYER_BASE_SIZE / 2, gamePlayer->position.y - PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, gamePlayer->color);
 	}
 
+	UpdateGame(gameMap, gamePlayer, tileTypes);
 	End2dMode();
 	EndDrawing();
 }
@@ -266,7 +267,6 @@ internal void
 UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
 	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
-	UpdateGame(gameMap, gamePlayer, tileTypes);
 }
 
 // Updates the player's position based on the keyboard input
@@ -359,11 +359,11 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 	{
 		for (int j = 0; j < 3; j++) 
 		{
-			TileProps tp = tileTypes->tiles[gameMap->map[x+i][y+j]];
+			TileProps tp = tileTypes->tiles[gameMap->map[x+(i*xDir)][y+(j*yDir)]];
 			if (!tp.wall)
 				continue;
 
-			Vector2 tileTl = (Vector2){gameMap->tileWidth*(x+i), gameMap->tileWidth*(y+j)};
+			Vector2 tileTl = (Vector2){gameMap->tileWidth*(x+(i*xDir)), gameMap->tileWidth*(y+(j*yDir))};
 			Vector2 tileBr = (Vector2){tileTl.x+gameMap->tileWidth, tileTl.y+gameMap->tileHeight};
 			//TODO: Use collision box here, not entity's box
 			Vector2 entityTl = (Vector2){entity->position.x-(PLAYER_BASE_SIZE/2), entity->position.y-(COLLISION_BUFFER/2)};
