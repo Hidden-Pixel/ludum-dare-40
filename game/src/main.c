@@ -291,11 +291,10 @@ UpdatePlayerPosition(float delta, Entity *gamePlayer)
 	}
 	Vector2Scale(&acceleration, delta);
 	gamePlayer->velocity = Vector2Add(acceleration, gamePlayer->velocity);
-
 	float magnitude = Vector2Length(gamePlayer->velocity);
 	if (magnitude > gamePlayer->maxVelocity)
 	{
-		Vector2Divide(&gamePlayer->velocity, magnitude);
+		Vector2Scale(&gamePlayer->velocity, gamePlayer->maxVelocity/magnitude);
 	}
 	Vector2 frameVel = gamePlayer->velocity;
 	Vector2Scale(&frameVel, delta);
