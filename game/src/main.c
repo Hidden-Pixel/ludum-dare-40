@@ -434,7 +434,7 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 internal int 
 AddEntity(EntityCollection *collection, Entity entity)
 {
-	if (collection->size >= 256)
+	if (collection->capacity >= 256)
 		InvalidCodePath;
 
 	collection->list[collection->size] = entity;
