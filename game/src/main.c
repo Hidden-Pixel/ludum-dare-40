@@ -23,6 +23,8 @@
 #define PLAYER_SPEED_DECAY 0.95f
 #define PLAYER_MAX_SHOOTS   10
 
+#define COLLISION_BUFFER 20.0f
+
 #define global_variable static
 #define internal	static
 #define local_persist   static
@@ -101,7 +103,7 @@ internal void
 InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(TileMap *gameMap, Entity *gamePlayer);
+UpdateGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes);
 
 internal void
 DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -116,7 +118,7 @@ internal void
 UpdatePlayerPosition(Entity *gamePlayer);
 
 internal void
-UpdateEntityPosition(TileMap *gameMap, Entity *entity);
+UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
@@ -124,6 +126,8 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
 internal inline Vector2
 GetTileAtLocation(TileMap *gameMap, Vector2 location);
 
+internal void 
+HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -199,9 +203,9 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 }
 
 internal void
-UpdateGame(TileMap *gameMap, Entity *gamePlayer)
+UpdateGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes)
 {
-	UpdateEntityPosition(gameMap, gamePlayer);
+	UpdateEntityPosition(gameMap, gamePlayer, tileTypes);
 }
 
 internal void
@@ -246,6 +250,7 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *g
 		DrawRectangle(gamePlayer->position.x - PLAYER_BASE_SIZE / 2, gamePlayer->position.y - PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, gamePlayer->color);
 	}
 
+	UpdateGame(gameMap, gamePlayer, tileTypes);
 	End2dMode();
 	EndDrawing();
 }
@@ -261,7 +266,7 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	UpdateGame(gameMap, gamePlayer);
+	//UpdateGame(gameMap, gamePlayer, tileTypes);
 	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
 }
 
@@ -320,7 +325,7 @@ UpdateEnemyPosition(Entity *gameEntity)
 }
 
 internal void
-UpdateEntityPosition(TileMap *gameMap, Entity *entity)
+UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 {
 	switch (entity->type)
 	{
@@ -333,5 +338,59 @@ UpdateEntityPosition(TileMap *gameMap, Entity *entity)
 		{
 
 		} break;
+	}
+
+	HandleTileCollisions(gameMap, entity, tileTypes);
+}
+
+internal void 
+HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes) 
+{
+	Vector2 currentTile = GetTileAtLocation(gameMap, entity->position);
+	int x, y;
+	x = ((int)currentTile.x)-1;
+	y = ((int)currentTile.y)-1;
+	/*int x, y;
+	// if the entity's velocity is positive in the x it's moving right so start testing tiles to the left
+	if (entity->velocity.x > 0)
+	{
+		x = ((int)currentTile.x)-1;
+	}
+	else
+	{
+		x = ((int)currentTile.x)+1;
+	}
+
+	// if the entity's velocity is postive in the y it's moving down, so start testing tiles above it
+	if (entity->velocity.y > 0)
+	{
+		y = ((int)currentTile.y)-1;
+	}
+	else 
+	{
+		y = ((int)currentTile.y)+1;
+	}*/
+
+	// check all tiles around player
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++) 
+		{
+			TileProps tp = tileTypes->tiles[gameMap->map[x+i][y+j]];
+			if (!tp.wall)
+				continue;
+
+			Vector2 tileTl = (Vector2){gameMap->tileWidth*(x+i), gameMap->tileWidth*(y+j)};
+			Vector2 tileBr = (Vector2){tileTl.x+gameMap->tileWidth, tileTl.y+gameMap->tileHeight};
+			//TODO: Use collision box here, not entity's box
+			Vector2 entityTl = (Vector2){entity->position.x-(PLAYER_BASE_SIZE/2), entity->position.y-(COLLISION_BUFFER/2)};
+			Vector2 entityBr = (Vector2){entity->position.x+(PLAYER_BASE_SIZE/2), entity->position.y+(COLLISION_BUFFER/2)};
+			Vector3 move = RectCollision3(tileTl, tileBr, entityTl, entityBr);
+			if (move.z) 
+			{
+				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
+				return;
+			}
+		}
 	}
 }
