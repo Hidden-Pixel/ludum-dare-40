@@ -1,15 +1,19 @@
 /*
  *	ludum dare 40
+ *  main.c
  *
  */
 
 #include <math.h>
 
-#include "collision.c"
 #include "levelgen.c"
 
 #include "raylib.h"
 #include "raymath.h"
+
+#include "main.h"
+#include "entity.h"
+#include "collision.c"
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -18,69 +22,16 @@
 //----------------------------------------------------------------------------------
 // Defines
 //----------------------------------------------------------------------------------
-#define PLAYER_BASE_SIZE    20.0f
-#define PLAYER_SPEED        8.0f
-#define PLAYER_SPEED_INCREMENT 0.25f
-#define PLAYER_SPEED_DECAY 0.95f
-#define PLAYER_MAX_SHOOTS   10
+#define PLAYER_BASE_SIZE        20.0f
+#define PLAYER_SPEED            8.0f
+#define PLAYER_SPEED_INCREMENT  0.25f
+#define PLAYER_SPEED_DECAY      0.95f
 
+#define ENEMY_DEFAULT_SIZE              20.0f
+#define ENEMY_DEFAULT_SPEED             1.5f
+#define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
+#define ENEMY_DEFAULT_SPEED_DECAY       0.97f
 #define COLLISION_BUFFER 10.0f
-
-#define global_variable static
-#define internal	static
-#define local_persist   static
-
-#define len(array)(sizeof(array)/sizeof(array[0]))
-#define len2d(array)(sizeof(array[0])/sizeof(array[0][0]))
-#define assert(expression) if(!(expression)) {*(int *)0 = 0;}
-#define NotImplemented assert(!"NotImplemented")
-
-//----------------------------------------------------------------------------------
-// Types and Structures Definition
-//----------------------------------------------------------------------------------
-
-// NOTE(nick): could probably replace with v2?
-typedef struct _screen
-{
-	int width;
-	int height;
-} Screen;
-
-typedef struct _titleMap
-{
-	int map[256][256];
-	int tileHeight;
-	int tileWidth;
-} TileMap;
-
-typedef enum _entityType
-{
-	NONE   = 0x0000,
-	PLAYER = 0x0001,
-	ENEMY  = 0x0002,
-} EntityType;
-
-typedef struct _entity
-{
-    Vector2 position;
-    Vector2 velocity;
-    float rotation;
-	float maxVelocity;
-    Vector3 collider;
-	EntityType type;
-    Color color;
-} Entity;
-
-typedef struct _tileProps
-{
-	Color color;
-	bool wall;
-} TileProps;
-
-typedef struct _tileTypes
-{
-	TileProps tiles[20];
-} TileTypes;
 
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
@@ -97,23 +48,25 @@ global_variable TileTypes GlobalTileTypes;
 global_variable Camera2D GlobalCamera;
 global_variable Entity GlobalPlayer;
 
+global_variable EntityCollection GlobalEnemies;
+
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, TileTypes *gameTileTypes);
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *gameTileTypes);
 
 internal void
 UpdateGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes);
 
 internal void
-DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
+DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 UnloadGame(void);
 
 internal void
-UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
+UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 UpdatePlayerPosition(Entity *gamePlayer);
@@ -134,34 +87,33 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 // Program main entry point
 //------------------------------------------------------------------------------------
 int main(void)
-{	
+{
 	GlobalScreen.width = 1280;
 	GlobalScreen.height = 720;
 	// Initialization
     InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
-    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer, &GlobalTileTypes);
+    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer, &GlobalEnemies, &GlobalTileTypes);
 
 #if defined(PLATFORM_WEB)
 	// TODO(nick): might need to change this to have parameters? look at documentation 
     emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
 #else
     SetTargetFPS(60);
-    
-	while (!WindowShouldClose())    // Detect window close button or ESC key
+	while (!WindowShouldClose())
 	{
-		UpdateDrawFrame(&GlobalMap, &GlobalPlayer, &GlobalTileTypes, &GlobalCamera);
+		UpdateDrawFrame(&GlobalMap, &GlobalPlayer, &GlobalEnemies, &GlobalTileTypes, &GlobalCamera);
 	}
 #endif
 
     // De-Initialization
-    UnloadGame();         // Unload loaded data (textures, sounds, models...)
-    
-    CloseWindow();        // Close window and OpenGL context
+    UnloadGame();
+    CloseWindow();
+
     return 0;
 }
 
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, TileTypes *gameTileTypes)
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *gameTileTypes)
 {
 	// camera setup
 	{
@@ -169,12 +121,11 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 		gameCamera->target.y   = 0.0f;
 		gameCamera->rotation = 0.0f;
 		gameCamera->zoom = 1.0f;
-
 	}
 
 	// tile types setup
 	{
-		gameTileTypes->tiles[0].color = BLACK;
+        gameTileTypes->tiles[0].color = BLACK;
 		gameTileTypes->tiles[1].color = DARKGREEN;
 		gameTileTypes->tiles[2].color = GRAY;
 		gameTileTypes->tiles[3].color = BROWN;
@@ -201,8 +152,26 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 		gamePlayer->velocity.x = gamePlayer->velocity.y = 0;
 		gamePlayer->color = WHITE;
 		gamePlayer->maxVelocity = PLAYER_SPEED;
-		gamePlayer->type = PLAYER;
+		gamePlayer->props.type = PLAYER;
 	}
+
+    // enemies setup
+    {
+        gameEnemies->size = 256;
+        int i;
+        for (i = 0; i < gameEnemies->size; ++i)
+        {
+            gameEnemies->list[i].position.x = 80;
+            gameEnemies->list[i].position.y = 80;
+            gameEnemies->list[i].velocity.x = 0;
+            gameEnemies->list[i].velocity.y = 0;
+            gameEnemies->list[i].color = PURPLE;
+            gameEnemies->list[i].maxVelocity = ENEMY_DEFAULT_SPEED;
+            gameEnemies->list[i].props.type = ENEMY; 
+            gameEnemies->list[i].props.subType = SKELETON;
+            gameEnemies->list[i].props.attributes = NOATTRIBUTES;
+        }
+    }
 }
 
 internal void
@@ -224,7 +193,7 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 }
 
 internal void
-DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
+DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     BeginDrawing();
 	gameCamera->target.x = (int) gamePlayer->position.x;
@@ -244,13 +213,23 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *g
 			{
 				for (y = 0; y < len2d(gameMap->map); ++y)
 				{	
-					// TODO(nick): remove for testing
 					TileProps tile = tileTypes->tiles[gameMap->map[x][y]];
 					DrawRectangle(x * gameMap->tileWidth, y * gameMap->tileHeight, gameMap->tileWidth-1, gameMap->tileHeight-1, tile.color);
 				}
 			}
 		}
+
+        // draw player
 		DrawRectangle(gamePlayer->position.x - PLAYER_BASE_SIZE / 2, gamePlayer->position.y - PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, gamePlayer->color);
+
+        // draw enemies
+        int i;
+        for (i = 0; i < gameEnemies->size; ++i)
+        {
+            DrawRectangle(gameEnemies->list[i].position.x - ENEMY_DEFAULT_SPEED / 2, gameEnemies->list[i].position.y - ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, gameEnemies->list[i].color);
+            // TODO(nick): remove just one entity for now!
+            break;
+        }
 	}
 
 	End2dMode();
@@ -266,18 +245,19 @@ UnloadGame(void)
 
 // Update and Draw (one frame)
 internal void
-UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
+UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera)
 {
 	UpdateGame(gameMap, gamePlayer, tileTypes);
-	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
+	DrawGame(gameMap, gamePlayer, gameEnemies, tileTypes, gameCamera);
 }
 
 // Updates the player's position based on the keyboard input
 internal void
 UpdatePlayerPosition(Entity *gamePlayer)
 {
-	Vector2 acceleration = Vector2Zero();
-
+	Vector2 acceleration;
+	acceleration.x = 0;
+	acceleration.y = 0;
 	// update player input
 	if (IsKeyDown(KEY_RIGHT)) 
 	{
@@ -317,7 +297,7 @@ UpdatePlayerPosition(Entity *gamePlayer)
 internal inline Vector2
 GetTileAtLocation(TileMap *gameMap, Vector2 location)
 {
-	return (Vector2){(int)(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
+    return (Vector2){(int)(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
 }
 
 internal void
@@ -329,19 +309,23 @@ UpdateEnemyPosition(Entity *gameEntity)
 internal void
 UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 {
-	switch (entity->type)
+	switch (entity->props.type)
 	{
 		case PLAYER:
 		{
 			UpdatePlayerPosition(entity);
 		} break;
 
+        case ENEMY:
+        {
+            NotImplemented;
+        } break;
+
 		default:
 		{
-
+            NotImplemented;
 		} break;
 	}
-
 	HandleTileCollisions(gameMap, entity, tileTypes);
 }
 
