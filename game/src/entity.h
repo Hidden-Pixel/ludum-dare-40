@@ -5,10 +5,10 @@
 
 typedef enum _entityType
 {
-	NOTYPE      = 0x00,
-	PLAYER      = 0x01,
+    NOTYPE      = 0x00,
+    PLAYER      = 0x01,
     WEAPON      = 0x03,
-	ENEMY       = 0x02,
+    ENEMY       = 0x02,
 } EntityType;
 
 typedef enum _entitySubTypes
@@ -48,7 +48,7 @@ typedef struct _entity
     Vector2 position;
     Vector2 velocity;
     float rotation;
-	float maxVelocity;
+    float maxVelocity;
     Vector3 collider;
     EntityProp props;
     Color color;
