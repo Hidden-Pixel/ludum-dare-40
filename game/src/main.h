@@ -2,6 +2,10 @@
  * main.h
  *
  */
+#ifndef __MAIN_H__
+#define __MAIN_H__ 1
+
+#include "raylib.h"
 
 #define global_variable     static
 #define internal            static
@@ -37,3 +41,5 @@ typedef struct _tileTypes
 {
 	TileProps tiles[20];
 } TileTypes;
+
+#endif
