@@ -8,7 +8,6 @@
 #include "raylib.h"
 #include "raymath.h"
 
-
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
 #endif
@@ -49,26 +48,23 @@ typedef struct _titleMap
 	int tileWidth;
 } TileMap;
 
-typedef struct _player
+typedef enum _entityType
+{
+	NONE   = 0x0000,
+	PLAYER = 0x0001,
+	ENEMY  = 0x0002,
+} EntityType;
+
+typedef struct _entity
 {
     Vector2 position;
     Vector2 velocity;
     float rotation;
 	float maxVelocity;
     Vector3 collider;
+	EntityType type;
     Color color;
-} Player;
-
-typedef struct _shoot
-{
-    Vector2 position;
-    Vector2 speed;
-    float radius;
-    float rotation;
-    int lifeSpawn;
-    bool active;
-    Color color;
-} Shoot;
+} Entity;
 
 typedef struct _tileProps
 {
@@ -94,28 +90,31 @@ global_variable Screen GlobalScreen;
 global_variable TileMap GlobalMap;
 global_variable TileTypes GlobalTileTypes;
 global_variable Camera2D GlobalCamera;
-global_variable Player GlobalPlayer;
+global_variable Entity GlobalPlayer;
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Player *gamePlayer, TileTypes *gameTileTypes);
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(Player *gamePlayer);
+UpdateGame(Entity *gamePlayer);
 
 internal void
-DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
+DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 UnloadGame(void);
 
 internal void
-UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
+UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
-UpdatePlayerPosition(Player *gamePlayer);
+UpdatePlayerPosition(Entity *gamePlayer);
+
+internal void
+UpdateEntityPosition(Entity *entity);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
@@ -128,14 +127,14 @@ int main(void)
 	GlobalScreen.width = 1280;
 	GlobalScreen.height = 720;
 	// Initialization
-    	InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
-    	InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer, &GlobalTileTypes);
+    InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
+    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer, &GlobalTileTypes);
 
 #if defined(PLATFORM_WEB)
 	// TODO(nick): might need to change this to have parameters? look at documentation 
-    	emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
+    emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
 #else
-    	SetTargetFPS(60);
+    SetTargetFPS(60);
     
 	while (!WindowShouldClose())    // Detect window close button or ESC key
 	{
@@ -143,15 +142,15 @@ int main(void)
 	}
 #endif
 
-    	// De-Initialization
-    	UnloadGame();         // Unload loaded data (textures, sounds, models...)
+    // De-Initialization
+    UnloadGame();         // Unload loaded data (textures, sounds, models...)
     
-    	CloseWindow();        // Close window and OpenGL context
-    	return 0;
+    CloseWindow();        // Close window and OpenGL context
+    return 0;
 }
 
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Player *gamePlayer, TileTypes *gameTileTypes)
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, TileTypes *gameTileTypes)
 {
 	// camera setup
 	{
@@ -189,13 +188,14 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Player *gam
 		gamePlayer->velocity.x = gamePlayer->velocity.y = 0;
 		gamePlayer->color = WHITE;
 		gamePlayer->maxVelocity = PLAYER_SPEED;
+		gamePlayer->type = PLAYER;
 	}
 }
 
 internal void
-UpdateGame(Player *gamePlayer)
+UpdateGame(Entity *gamePlayer)
 {
-	UpdatePlayerPosition(gamePlayer);
+	UpdateEntityPosition(gamePlayer);
 }
 
 internal void
@@ -211,7 +211,7 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 }
 
 internal void
-DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
+DrawGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     BeginDrawing();
 	gameCamera->target.x = (int) gamePlayer->position.x;
@@ -253,7 +253,7 @@ UnloadGame(void)
 
 // Update and Draw (one frame)
 internal void
-UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
+UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera)
 {
 	UpdateGame(gamePlayer);
 	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
@@ -261,7 +261,7 @@ UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Came
 
 // Updates the player's position based on the keyboard input
 internal void
-UpdatePlayerPosition(Player *gamePlayer)
+UpdatePlayerPosition(Entity *gamePlayer)
 {
 	Vector2 acceleration;
 	acceleration.x = 0;
@@ -300,4 +300,27 @@ UpdatePlayerPosition(Player *gamePlayer)
 		Vector2Divide(&gamePlayer->velocity, magnitude);
 	}
 	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
+}
+
+internal void
+UpdateEnemyPosition(Entity *gameEntity)
+{
+	NotImplemented;
+}
+
+internal void
+UpdateEntityPosition(Entity *entity)
+{
+	switch (entity->type)
+	{
+		case PLAYER:
+		{
+			UpdatePlayerPosition(entity);
+		} break;
+
+		default:
+		{
+
+		} break;
+	}
 }
