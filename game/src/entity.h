@@ -2,6 +2,8 @@
  *  entity.h
  *
  */
+#ifndef __ENTITY_H__
+#define __ENTITY_H__ 1
 
 typedef enum _entityType
 {
@@ -59,3 +61,5 @@ typedef struct _entityCollection
     Entity list[256];
     int size;
 } EntityCollection;
+
+#endif

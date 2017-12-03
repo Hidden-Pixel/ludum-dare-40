@@ -3,12 +3,10 @@
  *  main.c
  *
  */
-
-#include <math.h>
-
 #include "raylib.h"
 #include "raymath.h"
 #include <stdlib.h>
+#include <math.h>
 
 #include "main.h"
 #include "entity.h"
@@ -58,7 +56,7 @@ internal void
 InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *globalEntities, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(TileMap *gameMap, EntityCollection *gameEnemies, TileTypes *tileTypes);
+UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, TileTypes *tileTypes);
 
 internal void
 DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -70,13 +68,13 @@ internal void
 UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
-UpdateEntitiesPosition(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes);
+UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes);
 
 internal void
-UpdatePlayerPosition(Entity *gamePlayer);
+UpdatePlayerPosition(float delta, Entity *gamePlayer);
 
 internal void
-UpdateEnemyPosition(Entity gamePlayer, Entity *gameEnemy);
+UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
@@ -181,9 +179,9 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 }
 
 internal void
-UpdateGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes)
+UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes)
 {
-    UpdateEntitiesPosition(gameMap, gameEntities, tileTypes);
+    UpdateEntitiesPosition(delta, gameMap, gameEntities, tileTypes);
 }
 
 internal void
@@ -216,9 +214,17 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
 		{
 			int x;
 			int y;
-			for (x = 0; x < len(gameMap->map); ++x)
+			int bX = -gameCamera->offset.x / gameMap->tileWidth;
+			int bY = -gameCamera->offset.y / gameMap->tileHeight;
+			int eX = bX + GlobalScreen.width / gameMap->tileWidth;
+			int eY = bY + GlobalScreen.height / gameMap->tileHeight;
+			bX = max(min(bX, LEVEL_SIZE), 0);
+			bY = max(min(bY, LEVEL_SIZE), 0);
+			eX = max(min(eX, LEVEL_SIZE), 0);
+			eY = max(min(eY, LEVEL_SIZE), 0);
+			for (x = bX; x < eX; ++x)
 			{
-				for (y = 0; y < len2d(gameMap->map); ++y)
+				for (y = bY; y < eY; ++y)
 				{	
 					TileProps tile = tileTypes->tiles[gameMap->map[x][y]];
 					DrawRectangle(x * gameMap->tileWidth, y * gameMap->tileHeight, gameMap->tileWidth-1, gameMap->tileHeight-1, tile.color);
@@ -238,7 +244,6 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
             break;
         }
 	}
-
 	End2dMode();
 	EndDrawing();
 }
@@ -254,13 +259,13 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	UpdateGame(gameMap, gameEntities, tileTypes);
+	UpdateGame(1, gameMap, gameEntities, tileTypes);
 	DrawGame(gameMap, gameEntities, tileTypes, gameCamera);
 }
 
 // Updates the player's position based on the keyboard input
 internal void
-UpdatePlayerPosition(Entity *gamePlayer)
+UpdatePlayerPosition(float delta, Entity *gamePlayer)
 {
 	Vector2 acceleration;
 	acceleration.x = 0;
@@ -290,34 +295,32 @@ UpdatePlayerPosition(Entity *gamePlayer)
 	{
 		gamePlayer->velocity.x *= PLAYER_SPEED_DECAY;
 	}
-
+	Vector2Scale(&acceleration, delta);
 	gamePlayer->velocity = Vector2Add(acceleration, gamePlayer->velocity);
-
 	float magnitude = Vector2Length(gamePlayer->velocity);
 	if (magnitude > gamePlayer->maxVelocity)
 	{
-		Vector2Divide(&gamePlayer->velocity, magnitude);
+		Vector2Scale(&gamePlayer->velocity, gamePlayer->maxVelocity/magnitude);
 	}
-	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
+	Vector2 frameVel = gamePlayer->velocity;
+	Vector2Scale(&frameVel, delta);
+	gamePlayer->position = Vector2Add(gamePlayer->position, frameVel);
 }
 
 internal void
-UpdateEnemyPosition(Entity gamePlayer, Entity *gameEnemy)
+UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy)
 {
     // TODO(nick): complete this
-    /*
-            Vector2 playerTilePosition = GetTileAtLocation(gameMap, gamePlayer->position);
-            Vector2 currentEnemyPosition;
-            currentEnemyPosition = GetTileAtLocation(gameMap, gameEnemies->list[i].position);
-            Vector2 tileDifference = Vector2Subtract(playerTilePosition, currentEnemyPosition);
-            tileDifference.x = fabs(tileDifference.x);
-            tileDifference.y = fabs(tileDifference.y);
-            if (tileDifference.x <= 1.2f && tileDifference.y <= 1.2f)
-            {
-                UpdateEntityPosition(gameMap, gamePlayer, &gameEnemies->list[i], tileTypes);
-            }
-            // TODO(nick): just for testing - one enemy
-            */
+    Vector2 playerTilePosition = GetTileAtLocation(gameMap, gamePlayer->position);
+    Vector2 currentEnemyPosition;
+    currentEnemyPosition = GetTileAtLocation(gameMap, gameEnemies->list[i].position);
+    Vector2 tileDifference = Vector2Subtract(playerTilePosition, currentEnemyPosition);
+    tileDifference.x = fabs(tileDifference.x);
+    tileDifference.y = fabs(tileDifference.y);
+    if (tileDifference.x <= 1.2f && tileDifference.y <= 1.2f)
+    {
+        UpdateEntityPosition(gameMap, gamePlayer, &gameEnemies->list[i], tileTypes);
+    }
 }
 
 internal inline Vector2
@@ -327,7 +330,7 @@ GetTileAtLocation(TileMap *gameMap, Vector2 location)
 }
 
 internal void
-UpdateEntitiesPosition(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes)
+UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes)
 {
     int i;
     for (i = 0; i < gameEntities->size; ++i)
@@ -338,7 +341,7 @@ UpdateEntitiesPosition(TileMap *gameMap, EntityCollection *gameEntities, TileTyp
             {
                 if (i == PLAYER_INDEX)
                 {
-                    UpdatePlayerPosition(&gameEntities->list[i]);
+                    UpdatePlayerPosition(delta, &gameEntities->list[i]);
                 }
                 else
                 {
@@ -348,7 +351,7 @@ UpdateEntitiesPosition(TileMap *gameMap, EntityCollection *gameEntities, TileTyp
 
             case ENEMY:
             {
-                UpdateEnemyPosition(gameEntities->list[PLAYER_INDEX], &gameEntities->list[i]);
+                UpdateEnemyPosition(delta, gameEntities->list[PLAYER_INDEX], &gameEntities->list[i]);
             } break;
 
             default:
@@ -378,11 +381,13 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 	{
 		for (int j = 0; j < 3; j++) 
 		{
-			TileProps tp = tileTypes->tiles[gameMap->map[x+(i*xDir)][y+(j*yDir)]];
+			int testX = max(min(x+i*xDir, LEVEL_SIZE), 0);
+			int testY = max(min(y+j*yDir, LEVEL_SIZE), 0);
+			TileProps tp = tileTypes->tiles[gameMap->map[testX][testY]];
 			if (!tp.wall)
 				continue;
 
-			Vector2 tileTl = (Vector2){gameMap->tileWidth*(x+(i*xDir)), gameMap->tileWidth*(y+(j*yDir))};
+			Vector2 tileTl = (Vector2){gameMap->tileWidth*testX, gameMap->tileWidth*testY};
 			Vector2 tileBr = (Vector2){tileTl.x+gameMap->tileWidth, tileTl.y+gameMap->tileHeight};
 			//TODO: Use collision box here, not entity's box
 			Vector2 entityTl = (Vector2){entity->position.x-(PLAYER_BASE_SIZE/2), entity->position.y-(COLLISION_BUFFER/2)};
@@ -391,15 +396,16 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			if (move.z) 
 			{
 				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
-				/*if (move.x > 0) 
+				if (move.x != 0)
 				{
 					entity->velocity.x = 0;
 				}
-				if (move.y > 0)
+				if (move.y != 0)
 				{
 					entity->velocity.y = 0;
-				}*/
+				}
 			}
 		}
 	}
 }
+

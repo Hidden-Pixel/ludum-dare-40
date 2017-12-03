@@ -1,3 +1,8 @@
+#include <stdbool.h>
+
+#include "main.h"
+
+
 #define ISLAND_MAX_SIZE 30
 #define ISLAND_MIN_SIZE 3
 

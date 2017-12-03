@@ -2,6 +2,10 @@
  * main.h
  *
  */
+#ifndef __MAIN_H__
+#define __MAIN_H__ 1
+
+#include "raylib.h"
 
 #define global_variable     static
 #define internal            static
@@ -14,6 +18,22 @@
 #define InvalidCodePath assert(!"InvalidCodePath")
 
 #define LEVEL_SIZE 256
+
+#ifndef max
+internal inline int
+max (int a, int b) 
+{
+	return (a > b) ? a : b;
+}
+#endif
+
+#ifndef min
+internal inline int 
+min(int a, int b) 
+{
+	return (a < b) ? a : b;
+}
+#endif
 
 typedef struct _screen
 {
@@ -38,3 +58,5 @@ typedef struct _tileTypes
 {
 	TileProps tiles[20];
 } TileTypes;
+
+#endif
