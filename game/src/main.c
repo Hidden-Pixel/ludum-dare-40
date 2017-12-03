@@ -285,11 +285,10 @@ UpdatePlayerPosition(Entity *gamePlayer)
 	}
 
 	gamePlayer->velocity = Vector2Add(acceleration, gamePlayer->velocity);
-
 	float magnitude = Vector2Length(gamePlayer->velocity);
 	if (magnitude > gamePlayer->maxVelocity)
 	{
-		Vector2Divide(&gamePlayer->velocity, magnitude);
+		Vector2Scale(&gamePlayer->velocity, gamePlayer->maxVelocity/magnitude);
 	}
 	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
 }
