@@ -434,10 +434,10 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 internal int 
 AddEntity(EntityCollection *collection, Entity entity)
 {
-	if (collection->capacity >= 256)
+	if (collection->capacity >= MAX_ENTITIES)
 		InvalidCodePath;
 
-	collection->list[collection->size] = entity;
+	collection->list[collection->capacity] = entity;
 	collection->capacity++;
 	return collection->capacity-1;
 }
