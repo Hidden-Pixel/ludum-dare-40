@@ -1,10 +1,3 @@
-#include <stdlib.h>
-#include "raymath.h"
-
-#define global_variable static
-#define internal	static
-#define local_persist   static
-#define LEVEL_SIZE 256
 #define ISLAND_MAX_SIZE 30
 #define ISLAND_MIN_SIZE 3
 

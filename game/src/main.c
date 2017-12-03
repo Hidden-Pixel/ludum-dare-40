@@ -6,14 +6,14 @@
 
 #include <math.h>
 
-#include "levelgen.c"
-
 #include "raylib.h"
 #include "raymath.h"
+#include <stdlib.h>
 
 #include "main.h"
 #include "entity.h"
 #include "collision.c"
+#include "levelgen.c"
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
