@@ -17,8 +17,9 @@
 // Defines
 //----------------------------------------------------------------------------------
 #define PLAYER_BASE_SIZE    20.0f
-#define PLAYER_SPEED        6.0f
-#define PLAYER_SPEED_INCREMENT 0.5f
+#define PLAYER_SPEED        2.0f
+#define PLAYER_SPEED_INCREMENT 0.25f
+#define PLAYER_SPEED_DECAY 0.95f
 #define PLAYER_MAX_SHOOTS   10
 
 #define global_variable static
@@ -52,7 +53,6 @@ typedef struct _player
 {
     Vector2 position;
     Vector2 velocity;
-    Vector2 acceleration;
     float rotation;
 	float maxVelocity;
     Vector3 collider;
@@ -114,6 +114,9 @@ UnloadGame(void);
 
 internal void
 UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *gameCamera);
+
+internal void
+UpdatePlayerPosition(Player *gamePlayer);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
@@ -182,8 +185,10 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Player *gam
 
 	// player setup
 	{
-		gamePlayer->rectangle.height = gamePlayer->rectangle.width = 30;
-		gamePlayer->rectangle.x = gamePlayer->rectangle.y = 0;
+		gamePlayer->rectangle.height = gamePlayer->rectangle.width = PLAYER_BASE_SIZE;
+		gamePlayer->rectangle.x = gamePlayer->position.x = 64;
+		gamePlayer->rectangle.y = gamePlayer->position.y = 64;
+		gamePlayer->velocity.x = gamePlayer->velocity.y = 0;
 		gamePlayer->color = WHITE;
 		gamePlayer->maxVelocity = PLAYER_SPEED;
 	}
@@ -192,37 +197,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Player *gam
 internal void
 UpdateGame(Player *gamePlayer)
 {
-	// update player input
-	{
-		if (IsKeyDown(KEY_RIGHT)) 
-		{
-			gamePlayer->acceleration.x += PLAYER_SPEED_INCREMENT;
-		}
-		if (IsKeyDown(KEY_LEFT))
-		{
-			gamePlayer->acceleration.x -= PLAYER_SPEED_INCREMENT;
-		}
-		if (IsKeyDown(KEY_UP))
-		{
-			gamePlayer->acceleration.y -= PLAYER_SPEED_INCREMENT;
-		}
-		if (IsKeyDown(KEY_DOWN))
-		{
-			gamePlayer->acceleration.y += PLAYER_SPEED_INCREMENT;
-		}
-
-		gamePlayer->velocity = Vector2Add(gamePlayer->acceleration, gamePlayer->velocity);
-		Vector2Scale(&gamePlayer->velocity, 0.9);
-		float magnitude = Vector2Length(gamePlayer->velocity);
-		if (magnitude > gamePlayer->maxVelocity)
-		{
-			Vector2Divide(&gamePlayer->velocity, magnitude);
-		}
-		gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
-		gamePlayer->rectangle.x = gamePlayer->position.x;
-		gamePlayer->rectangle.y = gamePlayer->position.y;
-		gamePlayer->acceleration.x = gamePlayer->acceleration.y = 0;
-	}
+	UpdatePlayerPosition(gamePlayer);
 }
 
 internal void
@@ -274,7 +249,7 @@ DrawGame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Camera2D *g
 internal void
 UnloadGame(void)
 {
-    	// TODO: Unload all dynamic loaded data (textures, sounds, models...)
+    // TODO: Unload all dynamic loaded data (textures, sounds, models...)
 	//NotImplemented;
 }
 
@@ -284,4 +259,49 @@ UpdateDrawFrame(TileMap *gameMap, Player *gamePlayer, TileTypes *tileTypes, Came
 {
 	UpdateGame(gamePlayer);
 	DrawGame(gameMap, gamePlayer, tileTypes, gameCamera);
+}
+
+// Updates the player's position based on the keyboard input
+internal void
+UpdatePlayerPosition(Player *gamePlayer)
+{
+	Vector2 acceleration;
+	acceleration.x = 0;
+	acceleration.y = 0;
+	// update player input
+	if (IsKeyDown(KEY_RIGHT)) 
+	{
+		acceleration.x += PLAYER_SPEED_INCREMENT;
+	}
+	if (IsKeyDown(KEY_LEFT))
+	{
+		acceleration.x -= PLAYER_SPEED_INCREMENT;
+	}
+	if (IsKeyDown(KEY_UP))
+	{
+		acceleration.y -= PLAYER_SPEED_INCREMENT;
+	}
+	if (IsKeyDown(KEY_DOWN))
+	{
+		acceleration.y += PLAYER_SPEED_INCREMENT;
+	}
+	if (!IsKeyDown(KEY_UP) && !IsKeyDown(KEY_DOWN))
+	{
+		gamePlayer->velocity.y *= PLAYER_SPEED_DECAY;
+	}
+	if (!IsKeyDown(KEY_LEFT) && !IsKeyDown(KEY_RIGHT))
+	{
+		gamePlayer->velocity.x *= PLAYER_SPEED_DECAY;
+	}
+
+	gamePlayer->velocity = Vector2Add(acceleration, gamePlayer->velocity);
+
+	float magnitude = Vector2Length(gamePlayer->velocity);
+	if (magnitude > gamePlayer->maxVelocity)
+	{
+		Vector2Divide(&gamePlayer->velocity, magnitude);
+	}
+	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
+	gamePlayer->rectangle.x = gamePlayer->position.x;
+	gamePlayer->rectangle.y = gamePlayer->position.y;
 }
