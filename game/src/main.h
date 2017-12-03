@@ -12,6 +12,8 @@
 #define assert(expression) if(!(expression)) {*(int *)0 = 0;}
 #define NotImplemented assert(!"NotImplemented")
 
+#define LEVEL_SIZE 256
+
 typedef struct _screen
 {
 	int width;
@@ -20,7 +22,7 @@ typedef struct _screen
 
 typedef struct _titleMap
 {
-    int map[20][20];
+    int map[LEVEL_SIZE][LEVEL_SIZE];
 	int tileHeight;
 	int tileWidth;
 } TileMap;

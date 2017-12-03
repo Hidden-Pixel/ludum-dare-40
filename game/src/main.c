@@ -8,10 +8,12 @@
 
 #include "raylib.h"
 #include "raymath.h"
+#include <stdlib.h>
 
 #include "main.h"
 #include "entity.h"
 #include "collision.c"
+#include "levelgen.c"
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -21,7 +23,7 @@
 // Defines
 //----------------------------------------------------------------------------------
 #define PLAYER_BASE_SIZE        20.0f
-#define PLAYER_SPEED            2.0f
+#define PLAYER_SPEED            8.0f
 #define PLAYER_SPEED_INCREMENT  0.25f
 #define PLAYER_SPEED_DECAY      0.95f
 
@@ -29,7 +31,6 @@
 #define ENEMY_DEFAULT_SPEED             1.5f
 #define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
 #define ENEMY_DEFAULT_SPEED_DECAY       0.97f
-
 #define COLLISION_BUFFER 10.0f
 
 //------------------------------------------------------------------------------------
@@ -135,11 +136,13 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 
 	// tile map setup
 	{
+		GenerateLevel(200, 200, gameMap->map);
 		gameMap->tileWidth = floor(gameScreen->width / 32.0);
 		gameMap->tileHeight = gameMap->tileWidth;
 		SetMapRect(gameMap, 1, 1, 5, 5, 1);
 		SetMapRect(gameMap, 1, 8, 6, 4, 1);
 		SetMapRect(gameMap, 3, 5, 1, 4, 3);
+		SetMapRect(gameMap, 3, 5, 200, 3, 3);
 	}
 
 	// player setup
@@ -211,7 +214,7 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, Ti
 				for (y = 0; y < len2d(gameMap->map); ++y)
 				{	
 					TileProps tile = tileTypes->tiles[gameMap->map[x][y]];
-					DrawRectangle(x * gameMap->tileWidth, y * gameMap->tileHeight, gameMap->tileWidth, gameMap->tileHeight, tile.color);
+					DrawRectangle(x * gameMap->tileWidth, y * gameMap->tileHeight, gameMap->tileWidth-1, gameMap->tileHeight-1, tile.color);
 				}
 			}
 		}
