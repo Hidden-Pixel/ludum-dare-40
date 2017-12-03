@@ -1,5 +1,6 @@
 /*
  *	ludum dare 40
+ *  main.c
  *
  */
 
@@ -7,6 +8,10 @@
 
 #include "raylib.h"
 #include "raymath.h"
+
+#include "main.h"
+#include "entity.h"
+#include "collision.c"
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -25,100 +30,7 @@
 #define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
 #define ENEMY_DEFAULT_SPEED_DECAY       0.97f
 
-#define global_variable static
-#define internal	    static
-#define local_persist   static 
-
-#define len(array)(sizeof(array)/sizeof(array[0]))
-#define len2d(array)(sizeof(array[0])/sizeof(array[0][0]))
-#define assert(expression) if(!(expression)) {*(int *)0 = 0;}
-#define NotImplemented assert(!"NotImplemented")
-
-//----------------------------------------------------------------------------------
-// Types and Structures Definition
-//----------------------------------------------------------------------------------
-
-// NOTE(nick): could probably replace with v2?
-typedef struct _screen
-{
-	int width;
-	int height;
-} Screen;
-
-typedef struct _titleMap
-{
-    int map[20][20];
-	int tileHeight;
-	int tileWidth;
-} TileMap;
-
-typedef enum _entityType
-{
-	NOTYPE      = 0x00,
-	PLAYER      = 0x01,
-    WEAPON      = 0x03,
-	ENEMY       = 0x02,
-} EntityType;
-
-typedef enum _entitySubTypes
-{
-    NOSUBTYPE = 0x00,
-
-    // enemy types
-    BOULDER   = 0x01,
-    SKELETON  = 0x02,
-    SOLIDER   = 0X03,
-
-    // weapon types
-    WHIP      = 0x0F,
-    REVOVLER  = 0x10,
-    BULLET    = 0x11,
-
-    // item types
-    HEALTHPACK = 0xF0,
-    AMMO       = 0xF0,
-} EntitySubType;
-
-typedef enum _entityAttributes
-{
-    NOATTRIBUTES = 0x00,
-    DRAG         = 0x01,
-} EntityAttribute;
-
-typedef struct _entityProps
-{
-    EntityType type;
-    EntitySubType subType;
-    EntityAttribute attributes;
-} EntityProp;
-
-typedef struct _entity
-{
-    Vector2 position;
-    Vector2 velocity;
-    float rotation;
-	float maxVelocity;
-    Vector3 collider;
-    EntityProp props;
-    Color color;
-} Entity;
-
-typedef struct _entityCollection
-{
-    Entity list[256];
-    int size;
-} EntityCollection;
-
-typedef struct _tileProps
-{
-	Color color;
-	bool wall;
-} TileProps;
-
-typedef struct _tileTypes
-{
-	TileProps tiles[20];
-} TileTypes;
+#define COLLISION_BUFFER 10.0f
 
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
@@ -144,7 +56,7 @@ internal void
 InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(Entity *gamePlayer);
+UpdateGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes);
 
 internal void
 DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -159,10 +71,16 @@ internal void
 UpdatePlayerPosition(Entity *gamePlayer);
 
 internal void
-UpdateEntityPosition(Entity *entity);
+UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
+
+internal inline Vector2
+GetTileAtLocation(TileMap *gameMap, Vector2 location);
+
+internal void 
+HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -254,9 +172,9 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 }
 
 internal void
-UpdateGame(Entity *gamePlayer)
+UpdateGame(TileMap *gameMap, Entity *gamePlayer, TileTypes *tileTypes)
 {
-	UpdateEntityPosition(gamePlayer);
+	UpdateEntityPosition(gameMap, gamePlayer, tileTypes);
 }
 
 internal void
@@ -326,7 +244,7 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	UpdateGame(gamePlayer);
+	UpdateGame(gameMap, gamePlayer, tileTypes);
 	DrawGame(gameMap, gamePlayer, gameEnemies, tileTypes, gameCamera);
 }
 
@@ -373,6 +291,12 @@ UpdatePlayerPosition(Entity *gamePlayer)
 	gamePlayer->position = Vector2Add(gamePlayer->position, gamePlayer->velocity);
 }
 
+internal inline Vector2
+GetTileAtLocation(TileMap *gameMap, Vector2 location)
+{
+    return (Vector2){(int)(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
+}
+
 internal void
 UpdateEnemyPosition(Entity *gameEntity)
 {
@@ -380,7 +304,7 @@ UpdateEnemyPosition(Entity *gameEntity)
 }
 
 internal void
-UpdateEntityPosition(Entity *entity)
+UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 {
 	switch (entity->props.type)
 	{
@@ -398,5 +322,49 @@ UpdateEntityPosition(Entity *entity)
 		{
             NotImplemented;
 		} break;
+	}
+	HandleTileCollisions(gameMap, entity, tileTypes);
+}
+
+internal void 
+HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes) 
+{
+	Vector2 currentTile = GetTileAtLocation(gameMap, entity->position);
+
+	// if the entity's velocity is positive in the x it's moving right so start testing tiles to the left
+	// if the entity's velocity is postive in the y it's moving down, so start testing tiles above it
+	int x = (entity->velocity.x > 0) ? ((int)currentTile.x)-1 : ((int)currentTile.x)+1;
+	int xDir = (entity->velocity.x > 0) ? 1 : -1;
+	int y = (entity->velocity.y > 0) ? ((int)currentTile.y)-1 : ((int)currentTile.y)+1;
+	int yDir = (entity->velocity.y > 0) ? 1 : -1;
+
+	// check all tiles around the entity
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++) 
+		{
+			TileProps tp = tileTypes->tiles[gameMap->map[x+(i*xDir)][y+(j*yDir)]];
+			if (!tp.wall)
+				continue;
+
+			Vector2 tileTl = (Vector2){gameMap->tileWidth*(x+(i*xDir)), gameMap->tileWidth*(y+(j*yDir))};
+			Vector2 tileBr = (Vector2){tileTl.x+gameMap->tileWidth, tileTl.y+gameMap->tileHeight};
+			//TODO: Use collision box here, not entity's box
+			Vector2 entityTl = (Vector2){entity->position.x-(PLAYER_BASE_SIZE/2), entity->position.y-(COLLISION_BUFFER/2)};
+			Vector2 entityBr = (Vector2){entity->position.x+(PLAYER_BASE_SIZE/2), entity->position.y+(COLLISION_BUFFER/2)};
+			Vector3 move = RectCollision3(tileTl, tileBr, entityTl, entityBr);
+			if (move.z) 
+			{
+				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
+				/*if (move.x > 0) 
+				{
+					entity->velocity.x = 0;
+				}
+				if (move.y > 0)
+				{
+					entity->velocity.y = 0;
+				}*/
+			}
+		}
 	}
 }

@@ -1,8 +1,7 @@
-#include "raymath.h"
-
-#define global_variable static
-#define internal	static
-#define local_persist   static
+/*
+ *  collision.c
+ *
+ */
 
 // Output vector 3 details the move r2 has to make to no longer collide with r1.  The z of the vector 3 will be true (positive int) if it has collided, false (0) if it has not.
 internal Vector3
@@ -19,8 +18,9 @@ RectCollision3(Vector2 r1tl, Vector2 r1br, Vector2 r2tl, Vector2 r2br)
 	Vector2 r2Size = Vector2Subtract(r2br, r2tl);
 	Vector2 avgSize = Vector2Add(r1Size, r2Size);
 	Vector2Divide(&avgSize, 2);
-	//return difference.x < avgSize.x && difference.y < avgSize.y;
-	Vector3 move;
+	DrawRectangle(r1tl.x, r1tl.y, r1Size.x, r1Size.y, RED);
+	DrawRectangle(r2tl.x, r2tl.y, r2Size.x, r2Size.y, BLUE);
+	Vector3 move = Vector3Zero();
 	move.z = (difference.x < avgSize.x && difference.y < avgSize.y);
 	if (!move.z) 
 	{
