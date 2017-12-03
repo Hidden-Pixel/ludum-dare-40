@@ -313,7 +313,7 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
 {
     Vector2 tileDifference = Vector2Subtract(gamePlayer.position, gameEnemy->position);
 	float dist = Vector2Length(tileDifference);
-    if (dist/gameMap->tileWidth <= 5)
+    if (dist/gameMap->tileWidth <= gameEnemy->sightDistance)
     {
 		Vector2Scale(&tileDifference, gameEnemy->maxVelocity/dist);
 		gameEnemy->position = Vector2Add(gameEnemy->position, tileDifference);
