@@ -267,30 +267,31 @@ UpdatePlayerPosition(float delta, Entity *gamePlayer)
 	acceleration.x = 0;
 	acceleration.y = 0;
 	// update player input
-	if (IsKeyDown(KEY_RIGHT)) 
+	if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) 
 	{
 		acceleration.x += PLAYER_SPEED_INCREMENT;
 	}
-	if (IsKeyDown(KEY_LEFT))
+	if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
 	{
 		acceleration.x -= PLAYER_SPEED_INCREMENT;
 	}
-	if (IsKeyDown(KEY_UP))
+	if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
 	{
 		acceleration.y -= PLAYER_SPEED_INCREMENT;
 	}
-	if (IsKeyDown(KEY_DOWN))
+	if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
 	{
 		acceleration.y += PLAYER_SPEED_INCREMENT;
 	}
-	if (!IsKeyDown(KEY_UP) && !IsKeyDown(KEY_DOWN))
+	if (!IsKeyDown(KEY_UP) && !IsKeyDown(KEY_W) && !IsKeyDown(KEY_DOWN) && !IsKeyDown(KEY_S))
 	{
 		gamePlayer->velocity.y *= PLAYER_SPEED_DECAY;
 	}
-	if (!IsKeyDown(KEY_LEFT) && !IsKeyDown(KEY_RIGHT))
+	if (!IsKeyDown(KEY_LEFT) && !IsKeyDown(KEY_A) && !IsKeyDown(KEY_RIGHT) && !IsKeyDown(KEY_D))
 	{
 		gamePlayer->velocity.x *= PLAYER_SPEED_DECAY;
 	}
+	
 	Vector2Scale(&acceleration, delta);
 	gamePlayer->velocity = Vector2Add(acceleration, gamePlayer->velocity);
 	float magnitude = Vector2Length(gamePlayer->velocity);
