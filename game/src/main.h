@@ -11,6 +11,7 @@
 #define len2d(array)(sizeof(array[0])/sizeof(array[0][0]))
 #define assert(expression) if(!(expression)) {*(int *)0 = 0;}
 #define NotImplemented assert(!"NotImplemented")
+#define InvalidCodePath assert(!"InvalidCodePath")
 
 #define LEVEL_SIZE 256
 

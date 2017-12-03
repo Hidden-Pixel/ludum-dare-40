@@ -22,6 +22,7 @@
 //----------------------------------------------------------------------------------
 // Defines
 //----------------------------------------------------------------------------------
+#define PLAYER_INDEX            0
 #define PLAYER_BASE_SIZE        20.0f
 #define PLAYER_SPEED            8.0f
 #define PLAYER_SPEED_INCREMENT  0.25f
@@ -31,6 +32,7 @@
 #define ENEMY_DEFAULT_SPEED             1.5f
 #define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
 #define ENEMY_DEFAULT_SPEED_DECAY       0.97f
+
 #define COLLISION_BUFFER 10.0f
 
 //------------------------------------------------------------------------------------
@@ -46,36 +48,35 @@ global_variable Screen GlobalScreen;
 global_variable TileMap GlobalMap;
 global_variable TileTypes GlobalTileTypes;
 global_variable Camera2D GlobalCamera;
-global_variable Entity GlobalPlayer;
 
-global_variable EntityCollection GlobalEnemies;
+global_variable EntityCollection GlobalEntities;
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *gameTileTypes);
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *globalEntities, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes);
+UpdateGame(TileMap *gameMap, EntityCollection *gameEnemies, TileTypes *tileTypes);
 
 internal void
-DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
+DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 UnloadGame(void);
 
 internal void
-UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
+UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
-UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
+UpdateEntitiesPosition(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes);
 
 internal void
 UpdatePlayerPosition(Entity *gamePlayer);
 
 internal void
-UpdateEnemyPosition(Entity *gameEnemy);
+UpdateEnemyPosition(Entity gamePlayer, Entity *gameEnemy);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
@@ -95,7 +96,7 @@ int main(void)
 	GlobalScreen.height = 720;
 	// Initialization
     InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
-    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalPlayer, &GlobalEnemies, &GlobalTileTypes);
+    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalTileTypes);
 
 #if defined(PLATFORM_WEB)
 	// TODO(nick): might need to change this to have parameters? look at documentation 
@@ -104,7 +105,7 @@ int main(void)
     SetTargetFPS(60);
 	while (!WindowShouldClose())
 	{
-		UpdateDrawFrame(&GlobalMap, &GlobalPlayer, &GlobalEnemies, &GlobalTileTypes, &GlobalCamera);
+		UpdateDrawFrame(&GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
 	}
 #endif
 
@@ -116,7 +117,7 @@ int main(void)
 }
 
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *gameTileTypes)
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, TileTypes *gameTileTypes)
 {
 	// camera setup
 	{
@@ -150,49 +151,39 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 
 	// player setup
 	{
-		gamePlayer->position.x = 64;
-		gamePlayer->position.y = 64;
-		gamePlayer->velocity.x = gamePlayer->velocity.y = 0;
-		gamePlayer->color = WHITE;
-		gamePlayer->maxVelocity = PLAYER_SPEED;
-		gamePlayer->props.type = PLAYER;
+		gameEntities->list[PLAYER_INDEX].position.x = 64;
+		gameEntities->list[PLAYER_INDEX].position.y = 64;
+		gameEntities->list[PLAYER_INDEX].velocity.x = 0;
+        gameEntities->list[PLAYER_INDEX].velocity.y = 0;
+		gameEntities->list[PLAYER_INDEX].color = WHITE;
+		gameEntities->list[PLAYER_INDEX].maxVelocity = PLAYER_SPEED;
+		gameEntities->list[PLAYER_INDEX].props.type = PLAYER;
 	}
 
     // enemies setup
     {
         // TODO(nick): figure out a way to spawn x amount of enemies near the player
-        gameEnemies->size = 256;
+        gameEntities->size = 256;
         int i;
-        for (i = 0; i < gameEnemies->size; ++i)
+        for (i = PLAYER_INDEX + 1; i < gameEntities->size; ++i)
         {
-            gameEnemies->list[i].position.x = 80;
-            gameEnemies->list[i].position.y = 80;
-            gameEnemies->list[i].velocity.x = 0;
-            gameEnemies->list[i].velocity.y = 0;
-            gameEnemies->list[i].color = PURPLE;
-            gameEnemies->list[i].maxVelocity = ENEMY_DEFAULT_SPEED;
-            gameEnemies->list[i].props.type = ENEMY; 
-            gameEnemies->list[i].props.subType = SKELETON;
-            gameEnemies->list[i].props.attributes = NOATTRIBUTES;
+            gameEntities->list[i].position.x = 80;
+            gameEntities->list[i].position.y = 80;
+            gameEntities->list[i].velocity.x = 0;
+            gameEntities->list[i].velocity.y = 0;
+            gameEntities->list[i].color = PURPLE;
+            gameEntities->list[i].maxVelocity = ENEMY_DEFAULT_SPEED;
+            gameEntities->list[i].props.type = ENEMY; 
+            gameEntities->list[i].props.subType = SKELETON;
+            gameEntities->list[i].props.attributes = NOATTRIBUTES;
         }
     }
 }
 
 internal void
-UpdateGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes)
+UpdateGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes)
 {
-    UpdateEntityPosition(gameMap, gamePlayer, tileTypes);
-    int i;
-    for (i = 0; i < gameEnemies->size; ++i)
-    {
-            Vector2 playerTilePosition = GetTileAtLocation(gameMap, gamePlayer->position);
-            Vector2 currentEnemyPosition;
-            currentEnemyPosition = GetTileAtLocation(gameMap, gameEnemies->list[i].position);
-            // TODO(nick): check to see if enemy is within 1 tiles from the entity - if so follow the player
-            UpdateEntityPosition(gameMap, &gameEnemies->list[i], tileTypes);
-            // TODO(nick): just for testing - one enemy
-            break;
-    }
+    UpdateEntitiesPosition(gameMap, gameEntities, tileTypes);
 }
 
 internal void
@@ -208,9 +199,10 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 }
 
 internal void
-DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera)
+DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     BeginDrawing();
+    Entity *gamePlayer = &gameEntities->list[PLAYER_INDEX];
 	gameCamera->target.x = (int) gamePlayer->position.x;
 	gameCamera->target.y = (int) gamePlayer->position.y;
 	gameCamera->offset.x = (int) (-gamePlayer->position.x + GlobalScreen.width / 2);
@@ -239,9 +231,9 @@ DrawGame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, Ti
 
         // draw enemies
         int i;
-        for (i = 0; i < gameEnemies->size; ++i)
+        for (i = (PLAYER_INDEX + 1); i < gameEntities->size; ++i)
         {
-            DrawRectangle(gameEnemies->list[i].position.x - ENEMY_DEFAULT_SPEED / 2, gameEnemies->list[i].position.y - ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, gameEnemies->list[i].color);
+            DrawRectangle(gameEntities->list[i].position.x - ENEMY_DEFAULT_SPEED / 2, gameEntities->list[i].position.y - ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, gameEntities->list[i].color);
             // TODO(nick): remove just one entity for now!
             break;
         }
@@ -260,10 +252,10 @@ UnloadGame(void)
 
 // Update and Draw (one frame)
 internal void
-UpdateDrawFrame(TileMap *gameMap, Entity *gamePlayer, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera)
+UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	UpdateGame(gameMap, gamePlayer, gameEnemies, tileTypes);
-	DrawGame(gameMap, gamePlayer, gameEnemies, tileTypes, gameCamera);
+	UpdateGame(gameMap, gameEntities, tileTypes);
+	DrawGame(gameMap, gameEntities, tileTypes, gameCamera);
 }
 
 // Updates the player's position based on the keyboard input
@@ -310,9 +302,22 @@ UpdatePlayerPosition(Entity *gamePlayer)
 }
 
 internal void
-UpdateEnemyPosition(Entity *gameEnemy)
+UpdateEnemyPosition(Entity gamePlayer, Entity *gameEnemy)
 {
-    //NotImplemented
+    // TODO(nick): complete this
+    /*
+            Vector2 playerTilePosition = GetTileAtLocation(gameMap, gamePlayer->position);
+            Vector2 currentEnemyPosition;
+            currentEnemyPosition = GetTileAtLocation(gameMap, gameEnemies->list[i].position);
+            Vector2 tileDifference = Vector2Subtract(playerTilePosition, currentEnemyPosition);
+            tileDifference.x = fabs(tileDifference.x);
+            tileDifference.y = fabs(tileDifference.y);
+            if (tileDifference.x <= 1.2f && tileDifference.y <= 1.2f)
+            {
+                UpdateEntityPosition(gameMap, gamePlayer, &gameEnemies->list[i], tileTypes);
+            }
+            // TODO(nick): just for testing - one enemy
+            */
 }
 
 internal inline Vector2
@@ -322,26 +327,37 @@ GetTileAtLocation(TileMap *gameMap, Vector2 location)
 }
 
 internal void
-UpdateEntityPosition(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
+UpdateEntitiesPosition(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes)
 {
-	switch (entity->props.type)
-	{
-		case PLAYER:
-		{
-			UpdatePlayerPosition(entity);
-		} break;
-
-        case ENEMY:
+    int i;
+    for (i = 0; i < gameEntities->size; ++i)
+    {
+        switch (gameEntities->list[i].props.type)
         {
-            UpdateEnemyPosition(entity);
-        } break;
+            case PLAYER:
+            {
+                if (i == PLAYER_INDEX)
+                {
+                    UpdatePlayerPosition(&gameEntities->list[i]);
+                }
+                else
+                {
+                    InvalidCodePath;
+                }
+            } break;
 
-		default:
-		{
-            NotImplemented;
-		} break;
-	}
-	HandleTileCollisions(gameMap, entity, tileTypes);
+            case ENEMY:
+            {
+                UpdateEnemyPosition(gameEntities->list[PLAYER_INDEX], &gameEntities->list[i]);
+            } break;
+
+            default:
+            {
+                NotImplemented;
+            } break;
+        }
+        HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
+    }
 }
 
 
