@@ -42,7 +42,7 @@ typedef struct _screen
 
 typedef struct _titleMap
 {
-	int map[20][20];
+    int map[20][20];
 	int tileHeight;
 	int tileWidth;
 } TileMap;
@@ -51,7 +51,7 @@ typedef enum _entityType
 {
 	NOTYPE      = 0x00,
 	PLAYER      = 0x01,
-    WEAPON      = 0x03,
+    	WEAPON      = 0x03,
 	ENEMY       = 0x02,
 } EntityType;
 
@@ -60,7 +60,7 @@ typedef enum _entitySubTypes
     NOSUBTYPE = 0x00,
 
     // enemy types
-    BOULDER   = 0x01
+    BOULDER   = 0x01,
     SKELETON  = 0x02,
     SOLIDER   = 0X03,
 
@@ -70,8 +70,8 @@ typedef enum _entitySubTypes
     BULLET    = 0x11,
 
     // item types
-    HEALTHPACK = 0xF0;
-    AMMO       = 0xF0;
+    HEALTHPACK = 0xF0,
+    AMMO       = 0xF0,
 
 } EntitySubType;
 
