@@ -74,13 +74,16 @@ internal void
 UpdatePlayerPosition(float delta, Entity *gamePlayer);
 
 internal void
-UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy);
+UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *);
 
 internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
 
 internal inline Vector2
 GetTileAtLocation(TileMap *gameMap, Vector2 location);
+
+internal inline Vector2
+GetTileCenter(TileMap *gameMap, int tileX, int tileY);
 
 internal void 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
@@ -138,19 +141,19 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 
 	// tile map setup
 	{
-		GenerateLevel(200, 200, gameMap->map);
+		GenerateLevel(50, 100, gameMap->map);
 		gameMap->tileWidth = floor(gameScreen->width / 32.0);
 		gameMap->tileHeight = gameMap->tileWidth;
 		SetMapRect(gameMap, 1, 1, 5, 5, 1);
 		SetMapRect(gameMap, 1, 8, 6, 4, 1);
 		SetMapRect(gameMap, 3, 5, 1, 4, 3);
-		SetMapRect(gameMap, 3, 5, 200, 3, 3);
 	}
 
 	// player setup
 	{
-		gameEntities->list[PLAYER_INDEX].position.x = 64;
-		gameEntities->list[PLAYER_INDEX].position.y = 64;
+		Vector2 playerStart = GetTileCenter(gameMap, 1, 1);
+		gameEntities->list[PLAYER_INDEX].position.x = playerStart.x;
+		gameEntities->list[PLAYER_INDEX].position.y = playerStart.y;
 		gameEntities->list[PLAYER_INDEX].velocity.x = 0;
         gameEntities->list[PLAYER_INDEX].velocity.y = 0;
 		gameEntities->list[PLAYER_INDEX].color = WHITE;
@@ -216,8 +219,8 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
 			int y;
 			int bX = -gameCamera->offset.x / gameMap->tileWidth;
 			int bY = -gameCamera->offset.y / gameMap->tileHeight;
-			int eX = bX + GlobalScreen.width / gameMap->tileWidth;
-			int eY = bY + GlobalScreen.height / gameMap->tileHeight;
+			int eX = bX + 1 + GlobalScreen.width / gameMap->tileWidth;
+			int eY = bY + 1 + GlobalScreen.height / gameMap->tileHeight;
 			bX = max(min(bX, LEVEL_SIZE), 0);
 			bY = max(min(bY, LEVEL_SIZE), 0);
 			eX = max(min(eX, LEVEL_SIZE), 0);
@@ -308,18 +311,18 @@ UpdatePlayerPosition(float delta, Entity *gamePlayer)
 }
 
 internal void
-UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy)
+UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *gameMap)
 {
     // TODO(nick): complete this
-    Vector2 playerTilePosition = GetTileAtLocation(gameMap, gamePlayer->position);
+    Vector2 playerTilePosition = GetTileAtLocation(gameMap, gamePlayer.position);
     Vector2 currentEnemyPosition;
-    currentEnemyPosition = GetTileAtLocation(gameMap, gameEnemies->list[i].position);
+    currentEnemyPosition = GetTileAtLocation(gameMap, gameEnemy->position);
     Vector2 tileDifference = Vector2Subtract(playerTilePosition, currentEnemyPosition);
     tileDifference.x = fabs(tileDifference.x);
     tileDifference.y = fabs(tileDifference.y);
     if (tileDifference.x <= 1.2f && tileDifference.y <= 1.2f)
     {
-        UpdateEntityPosition(gameMap, gamePlayer, &gameEnemies->list[i], tileTypes);
+        // TODO
     }
 }
 
@@ -327,6 +330,13 @@ internal inline Vector2
 GetTileAtLocation(TileMap *gameMap, Vector2 location)
 {
     return (Vector2){(int)(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
+}
+
+
+internal inline Vector2
+GetTileCenter(TileMap *gameMap, int tileX, int tileY)
+{
+	return (Vector2){gameMap->tileWidth*tileX+(gameMap->tileWidth/2), gameMap->tileWidth*tileY+(gameMap->tileHeight/2)};
 }
 
 internal void
@@ -351,7 +361,7 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
 
             case ENEMY:
             {
-                UpdateEnemyPosition(delta, gameEntities->list[PLAYER_INDEX], &gameEntities->list[i]);
+                UpdateEnemyPosition(delta, gameEntities->list[PLAYER_INDEX], &gameEntities->list[i], gameMap);
             } break;
 
             default:

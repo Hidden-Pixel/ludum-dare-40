@@ -17,7 +17,7 @@
 #define NotImplemented assert(!"NotImplemented")
 #define InvalidCodePath assert(!"InvalidCodePath")
 
-#define LEVEL_SIZE 256
+#define LEVEL_SIZE 100
 
 #ifndef max
 internal inline int
