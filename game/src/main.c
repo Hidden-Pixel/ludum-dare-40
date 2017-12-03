@@ -78,6 +78,9 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type);
 internal inline Vector2
 GetTileAtLocation(TileMap *gameMap, Vector2 location);
 
+internal inline Vector2
+GetTileCenter(TileMap *gameMap, int tileX, int tileY);
+
 internal void 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
@@ -145,8 +148,9 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, Entity *gam
 
 	// player setup
 	{
-		gamePlayer->position.x = 64;
-		gamePlayer->position.y = 64;
+		Vector2 playerStart = GetTileCenter(gameMap, 1, 1);
+		gamePlayer->position.x = playerStart.x;
+		gamePlayer->position.y = playerStart.y;
 		gamePlayer->velocity.x = gamePlayer->velocity.y = 0;
 		gamePlayer->color = WHITE;
 		gamePlayer->maxVelocity = PLAYER_SPEED;
@@ -304,6 +308,12 @@ internal inline Vector2
 GetTileAtLocation(TileMap *gameMap, Vector2 location)
 {
     return (Vector2){(int)(location.x/gameMap->tileWidth), (int)(location.y/gameMap->tileHeight)};
+}
+
+internal inline Vector2
+GetTileCenter(TileMap *gameMap, int tileX, int tileY)
+{
+	return (Vector2){gameMap->tileWidth*tileX+(gameMap->tileWidth/2), gameMap->tileWidth*tileY+(gameMap->tileHeight/2)};
 }
 
 internal void
