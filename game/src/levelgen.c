@@ -96,6 +96,16 @@ GenerateLevel(int numIslands, int paths, int level[LEVEL_SIZE][LEVEL_SIZE]) {
 				else
 				{
 					leftOldLand = true;
+					if (dir == 0 || dir == 2) {
+						if (level[sX][sY + 1] > 0 || level[sX][sY - 1] > 0) {
+							break;
+						}
+					}
+					if (dir == 1 || dir == 3) {
+						if (level[sX + 1][sY] > 0 || level[sX - 1][sY] > 0) {
+							break;
+						}
+					}
 				}
 			} while (!newLandFound);
 			if (!newLandFound) {
