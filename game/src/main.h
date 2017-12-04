@@ -31,6 +31,9 @@
 #define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
 #define ENEMY_DEFAULT_SPEED_DECAY       0.97f
 
+#define BULLET_DEFAULT_SIZE 5.0f
+#define BULLET_DEFAULT_SPEED 20.0f
+
 #define LEVEL_SIZE 100
 
 #ifndef max

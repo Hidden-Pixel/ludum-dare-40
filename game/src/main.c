@@ -70,7 +70,7 @@ GetTileAtLocation(TileMap *gameMap, Vector2 location);
 internal inline Vector2
 GetTileCenter(TileMap *gameMap, int tileX, int tileY);
 
-internal void 
+internal bool 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
 //------------------------------------------------------------------------------------
@@ -406,19 +406,43 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
                 UpdateEnemyPosition(delta, gameEntities->list[PLAYER_INDEX], &gameEntities->list[i], gameMap);
             } break;
 
+			case WEAPON:
+			{
+				switch(gameEntities->list[i].props.subType)
+				{
+					case BULLET:
+						UpdateBulletPosition(delta, gameEntities[i]);
+						break;
+					default:
+						validEntity = false;
+						break;
+				}
+			} break;
+
             default:
             {
 				validEntity = false;
             } break;
         }
 		if (validEntity) {
-			HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
+			bool collisionWithTile = HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
+			bool removed = HandleEntityActions(gameMap, &gameEntities, i, collisionWithTile);
+			// if the entity died, removed, etc reprocess the current index
+			if (removed) {
+				i--;
+			}
 		}
     }
 }
 
+internal void UpdateBulletPosition(float delta, Entity *bullet)
+{
+	Vector2 frameVel = bullet->velocity;
+	Vector2Scale(&frameVel, delta);
+	bullet->position = Vector2Add(bullet->position, frameVel);
+}
 
-internal void 
+internal bool 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes) 
 {
 	Vector2i currentTile = GetTileAtLocation(gameMap, entity->position);
@@ -429,6 +453,7 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 	int xDir = (entity->velocity.x > 0) ? 1 : -1;
 	int y = (entity->velocity.y > 0) ? ((int)currentTile.y)-1 : ((int)currentTile.y)+1;
 	int yDir = (entity->velocity.y > 0) ? 1 : -1;
+	bool collided = false;
 
 	// check all tiles around the entity
 	for (int i = 0; i < 3; i++)
@@ -448,6 +473,7 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			Vector3 move = RectCollision3(tileTl, tileBr, entityTl, entityBr);
 			if (move.z) 
 			{
+				collided = true;
 				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
 				if (move.x != 0)
 				{
@@ -460,4 +486,6 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			}
 		}
 	}
+
+	return collided;
 }
