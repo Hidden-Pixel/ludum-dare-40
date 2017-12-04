@@ -7,6 +7,7 @@
 
 #define MAX_ENTITIES 256
 
+
 typedef enum _entityType
 {
     NOTYPE      = 0x00,
@@ -71,4 +72,85 @@ typedef struct _entityCollection
     int capacity;
 } EntityCollection;
 
+internal int 
+AddEntity(EntityCollection *collection, Entity entity)
+{
+	if (collection->capacity >= MAX_ENTITIES)
+		InvalidCodePath;
+
+	collection->list[collection->capacity] = entity;
+	collection->capacity++;
+	return collection->capacity-1;
+}
+
+internal void
+RemoveEntity(EntityCollection *collection, int entityIx)
+{
+	collection->list[entityIx] = collection->list[collection->capacity-1];
+	collection->list[collection->capacity-1].props.type = NOTYPE;
+	collection->list[collection->capacity-1].props.subType = NOSUBTYPE;
+	collection->list[collection->capacity-1].props.attributes = NOATTRIBUTES;
+	collection->capacity--;
+}
+
+internal Entity GetBullet(Entity *spawnEntity) {
+    Entity bullet = (Entity){
+        .props.type = ENEMY,
+        .props.subType = BULLET,
+        .props.attributes = NOATTRIBUTES,
+        .color = RED,
+        .maxVelocity = BULLET_DEFAULT_SPEED,
+        .width = BULLET_DEFAULT_SIZE,
+        .height = BULLET_DEFAULT_SIZE
+    };
+
+    bullet.position = Vector2Zero();
+    bullet.position.x = (spawnEntity->direction.x > spawnEntity->position.x) ?
+        spawnEntity->position.x + (spawnEntity->width/2) :
+        spawnEntity->position.x - (spawnEntity->width/2);
+    bullet.position.y = (spawnEntity->direction.y > spawnEntity->position.y) ?
+        spawnEntity->position.y + (spawnEntity->height/2) :
+        spawnEntity->position.y - (spawnEntity->height/2);
+    bullet.direction = (Vector2) {spawnEntity->direction.x, spawnEntity->direction.y};
+    bullet.velocity = Vector2Subtract(bullet.direction, bullet.position);
+    Vector2Normalize(&bullet.velocity);
+    Vector2Scale(&bullet.velocity, bullet.maxVelocity);
+    return bullet;
+}
+
+internal void
+HandlePlayerAction(EntityCollection *collection, Entity *entity) {
+    if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        Entity bullet = GetBullet(entity);
+        bullet.props.type = WEAPON;
+        AddEntity(collection, bullet);
+    }
+}
+
+internal bool
+HandleEntityActions(TileMap *gameMap, EntityCollection *collection, int entityIx, bool collisionWithTile) {
+    Entity entity = collection->list[entityIx];
+    switch(entity.props.type) {
+        case PLAYER:
+            HandlePlayerAction(collection, &entity);
+            return false;
+        case WEAPON:
+            if (HandleWeaponAction(&entity, collisionWithTile)) {
+                RemoveEntity(collection, entityIx);
+                return true;
+            }
+            return false;            
+        default:
+            return false;
+    }
+}
+
+internal bool HandleWeaponAction(Entity *entity, bool collisionWithTile) {
+    switch (entity->props.subType) {
+        case BULLET:
+            if (collisionWithTile) return true;
+        default:
+            return false;
+    }
+}
 #endif

@@ -18,20 +18,6 @@
     #include <emscripten/emscripten.h>
 #endif
 
-//----------------------------------------------------------------------------------
-// Defines
-//----------------------------------------------------------------------------------
-#define PLAYER_INDEX            0
-#define PLAYER_BASE_SIZE        20.0f
-#define PLAYER_SPEED            8.0f
-#define PLAYER_SPEED_INCREMENT  0.25f
-#define PLAYER_SPEED_DECAY      0.95f
-
-#define ENEMY_DEFAULT_SIZE              20.0f
-#define ENEMY_DEFAULT_SPEED             1.5f
-#define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
-#define ENEMY_DEFAULT_SPEED_DECAY       0.97f
-
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
@@ -84,14 +70,11 @@ GetTileAtLocation(TileMap *gameMap, Vector2 location);
 internal inline Vector2
 GetTileCenter(TileMap *gameMap, int tileX, int tileY);
 
-internal void 
+internal bool 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
-internal int 
-AddEntity(EntityCollection *collection, Entity entity);
-
 internal void
-RemoveEntity(EntityCollection *collection, int entityIx);
+UpdateBulletPosition(float delta, Entity *bullet);
 
 internal void
 ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities);
@@ -430,15 +413,41 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
                 UpdateEnemyPosition(delta, gameEntities->list[PLAYER_INDEX], &gameEntities->list[i], gameMap);
             } break;
 
+			case WEAPON:
+			{
+				switch(gameEntities->list[i].props.subType)
+				{
+					case BULLET:
+						UpdateBulletPosition(delta, &gameEntities->list[i]);
+						break;
+					default:
+						validEntity = false;
+						break;
+				}
+			} break;
+
             default:
             {
 				validEntity = false;
             } break;
         }
 		if (validEntity) {
-			HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
+			bool collisionWithTile = HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
+			bool removed = HandleEntityActions(gameMap, gameEntities, i, collisionWithTile);
+			// if the entity died, removed, etc reprocess the current index
+			if (removed) {
+				i--;
+			}
 		}
     }
+}
+
+internal void
+UpdateBulletPosition(float delta, Entity *bullet)
+{
+	Vector2 frameVel = bullet->velocity;
+	Vector2Scale(&frameVel, delta);
+	bullet->position = Vector2Add(bullet->position, frameVel);
 }
 
 internal void 
@@ -477,7 +486,7 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 	}
 }
 
-internal void 
+internal bool 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes) 
 {
 	Vector2i currentTile = GetTileAtLocation(gameMap, entity->position);
@@ -488,6 +497,7 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 	int xDir = (entity->velocity.x > 0) ? 1 : -1;
 	int y = (entity->velocity.y > 0) ? ((int)currentTile.y)-1 : ((int)currentTile.y)+1;
 	int yDir = (entity->velocity.y > 0) ? 1 : -1;
+	bool collided = false;
 
 	// check all tiles around the entity
 	for (int i = 0; i < 3; i++)
@@ -507,6 +517,7 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			Vector3 move = RectCollision3(tileTl, tileBr, entityTl, entityBr);
 			if (move.z) 
 			{
+				collided = true;
 				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
 				if (move.x != 0)
 				{
@@ -519,25 +530,6 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			}
 		}
 	}
-}
 
-internal int 
-AddEntity(EntityCollection *collection, Entity entity)
-{
-	if (collection->capacity >= MAX_ENTITIES)
-		InvalidCodePath;
-
-	collection->list[collection->capacity] = entity;
-	collection->capacity++;
-	return collection->capacity-1;
-}
-
-internal void
-RemoveEntity(EntityCollection *collection, int entityIx)
-{
-	collection->list[entityIx] = collection->list[collection->capacity-1];
-	collection->list[collection->capacity-1].props.type = NOTYPE;
-	collection->list[collection->capacity-1].props.subType = NOSUBTYPE;
-	collection->list[collection->capacity-1].props.attributes = NOATTRIBUTES;
-	collection->capacity--;
+	return collided;
 }
