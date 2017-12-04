@@ -66,4 +66,25 @@ typedef struct _entityCollection
     int capacity;
 } EntityCollection;
 
+internal int 
+AddEntity(EntityCollection *collection, Entity entity)
+{
+	if (collection->capacity >= MAX_ENTITIES)
+		InvalidCodePath;
+
+	collection->list[collection->capacity] = entity;
+	collection->capacity++;
+	return collection->capacity-1;
+}
+
+internal void
+RemoveEntity(EntityCollection *collection, int entityIx)
+{
+	collection->list[entityIx] = collection->list[collection->capacity-1];
+	collection->list[collection->capacity-1].props.type = NOTYPE;
+	collection->list[collection->capacity-1].props.subType = NOSUBTYPE;
+	collection->list[collection->capacity-1].props.attributes = NOATTRIBUTES;
+	collection->capacity--;
+}
+
 #endif

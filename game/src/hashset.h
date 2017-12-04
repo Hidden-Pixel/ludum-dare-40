@@ -1,6 +1,7 @@
 /*
  *  hashset.h
  */
+#include "raymath.h"
 
 typedef struct _hashSetTiles
 {
