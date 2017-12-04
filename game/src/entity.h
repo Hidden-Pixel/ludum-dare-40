@@ -2,40 +2,29 @@
  *  entity.h
  *
  */
+
 #ifndef __ENTITY_H__
 #define __ENTITY_H__ 1
 
 typedef enum _entityType
 {
-    NOTYPE      = 0x00,
-    PLAYER      = 0x01,
-    WEAPON      = 0x03,
-    ENEMY       = 0x02,
+    NOENTITYTYPE      = 0x00,
+    PLAYER            = 0x01,
+    ENEMY             = 0x02,
 } EntityType;
 
-typedef enum _entitySubTypes
+typedef enum _entitySubType
 {
-    NOSUBTYPE = 0x00,
-
-    // enemy types
+    NOENTITYSUBTYPE = 0x00,
     BOULDER   = 0x01,
     SKELETON  = 0x02,
     SOLIDER   = 0X03,
-
-    // weapon types
-    WHIP      = 0x0F,
-    REVOVLER  = 0x10,
-    BULLET    = 0x11,
-
-    // item types
-    HEALTHPACK = 0xF0,
-    AMMO       = 0xF0,
 } EntitySubType;
 
 typedef enum _entityAttributes
 {
-    NOATTRIBUTES = 0x00,
-    DRAG         = 0x01,
+    NOENTITYATTRIBUTES = 0x00,
+    DRAG               = 0x01,
 } EntityAttribute;
 
 typedef struct _entityProps

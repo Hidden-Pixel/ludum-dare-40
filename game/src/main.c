@@ -3,6 +3,7 @@
  *  main.c
  *
  */
+
 #include "raylib.h"
 #include "raymath.h"
 #include <stdlib.h>
@@ -10,6 +11,7 @@
 
 #include "main.h"
 #include "entity.h"
+#include "item.h"
 #include "collision.c"
 #include "levelgen.c"
 #include "vector2i.h"
@@ -177,7 +179,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
             gameEntities->list[i].maxVelocity = ENEMY_DEFAULT_SPEED;
             gameEntities->list[i].props.type = ENEMY; 
             gameEntities->list[i].props.subType = SKELETON;
-            gameEntities->list[i].props.attributes = NOATTRIBUTES;
+            gameEntities->list[i].props.attributes = NOENTITYATTRIBUTES;
         }
     }
 }
@@ -371,7 +373,6 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
     }
 }
 
-
 internal void 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes) 
 {
@@ -416,4 +417,3 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 		}
 	}
 }
-
