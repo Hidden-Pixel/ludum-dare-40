@@ -6,6 +6,9 @@
 #ifndef __ENTITY_H__
 #define __ENTITY_H__ 1
 
+#define MAX_ENTITIES 256
+#define MAX_ITEM_SLOT 3
+
 typedef enum _entityType
 {
     NOENTITYTYPE      = 0x00,
@@ -16,9 +19,9 @@ typedef enum _entityType
 typedef enum _entitySubType
 {
     NOENTITYSUBTYPE = 0x00,
-    BOULDER   = 0x01,
-    SKELETON  = 0x02,
-    SOLIDER   = 0X03,
+    BOULDER         = 0x01,
+    SKELETON        = 0x02,
+    SOLIDER         = 0X03,
 } EntitySubType;
 
 typedef enum _entityAttributes
@@ -38,17 +41,50 @@ typedef struct _entity
 {
     Vector2 position;
     Vector2 velocity;
+    Vector2 direction;
     float rotation;
     float maxVelocity;
     Vector3 collider;
     EntityProp props;
     Color color;
+	int state;
+	float sightDistance;
+    int height;
+    int width;
+    Item items[MAX_ITEM_SLOT];
 } Entity;
 
 typedef struct _entityCollection
 {
-    Entity list[256];
+    Entity list[MAX_ENTITIES];
     int size;
+    int capacity;
 } EntityCollection;
+
+internal void
+AddItemToEntity(Entity *gameEntity, Item *gameItem)
+{
+    switch (gameItem->type)
+    {
+        case HEALTHPACK:
+        {
+            NotImplemented;
+        } break; 
+        case WEAPON:
+        {
+            NotImplemented;
+        } break;
+
+        case POWERUP:
+        {
+            NotImplemented;
+        } break;
+
+        default:
+        {
+            InvalidCodePath;
+        } break;
+    }
+}
 
 #endif

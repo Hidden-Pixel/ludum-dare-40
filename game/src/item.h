@@ -10,8 +10,9 @@ typedef enum _itemType
 {
     NOITEMTYPE = 0x00,
     HEALTHPACK = 0x01,
-    AMMO       = 0x02,
-    WEAPON     = 0x03,
+    WEAPON     = 0x02,
+    POWERUP    = 0x03,
+    AMMO       = 0x04,
 } ItemType;
 
 typedef enum _itemSubType
@@ -25,6 +26,7 @@ typedef enum _itemSubType
 typedef struct _item
 {
     unsigned int type;
+    unsigned int subtype;
 } Item;
 
 #endif
