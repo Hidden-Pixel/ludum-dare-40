@@ -50,7 +50,7 @@ internal void
 UnloadGame(void);
 
 internal void
-UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
+UpdateDrawFrame(void);
 
 internal void
 UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -91,7 +91,7 @@ int main(void)
     InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalTileTypes);
 
 #if defined(PLATFORM_WEB)
-	// TODO(nick): might need to change this to have parameters? look at documentation 
+    // TODO(nick): might need to change this to have parameters? look at documentation 
     emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
 #else
     SetTargetFPS(60);
@@ -260,11 +260,12 @@ UnloadGame(void)
 }
 
 // Update and Draw (one frame)
+//
 internal void
-UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
+UpdateDrawFrame(void)
 {
-	UpdateGame(1, gameMap, gameEntities, tileTypes, gameCamera);
-	DrawGame(gameMap, gameEntities, tileTypes, gameCamera);
+	UpdateGame(1, &GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
+	DrawGame(&GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
 }
 
 // Updates the player's position based on the keyboard input
