@@ -57,6 +57,8 @@ typedef struct _entity
     Vector3 collider;
     EntityProp props;
     Color color;
+    int height;
+    int width;
 } Entity;
 
 typedef struct _entityCollection
