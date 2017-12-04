@@ -50,11 +50,13 @@ global_variable Camera2D GlobalCamera;
 
 global_variable EntityCollection GlobalEntities;
 
+global_variable ItemCollection GlobalItems;
+
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *globalEntities, TileTypes *gameTileTypes);
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes);
 
 internal void
 UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -104,7 +106,7 @@ int main(void)
 	GlobalScreen.height = 720;
 	// Initialization
     InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
-    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalTileTypes);
+    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
 
 #if defined(PLATFORM_WEB)
 	// TODO(nick): might need to change this to have parameters? look at documentation 
@@ -173,7 +175,6 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 
     // enemies setup
     {
-        // TODO(nick): figure out a way to spawn x amount of enemies near the player
         gameEntities->size = MAX_ENTITIES;
         int i;
         for (i = 0; i < 10; ++i)
@@ -188,9 +189,10 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 				.props.subType = SKELETON,
 				.props.attributes = NOENTITYATTRIBUTES,
 				.state = 0,
-				.sightDistance = 10.0f,
-                .height = ENEMY_DEFAULT_SIZE,
-                .width = ENEMY_DEFAULT_SIZE
+				.sightDistance = 4.0f,
+				.counter = 0,
+				.height = ENEMY_DEFAULT_SIZE,
+				.width = ENEMY_DEFAULT_SIZE
 			};
 			AddEntity(gameEntities, skel);
         }
@@ -341,7 +343,51 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
     {
 		Vector2Scale(&tileDifference, gameEnemy->maxVelocity/dist);
 		gameEnemy->position = Vector2Add(gameEnemy->position, tileDifference);
-    }
+	}
+	else {
+		float x = 0, y = 0;
+		Vector2i blk;
+		switch (gameEnemy->state) {
+		case 0:
+			x = gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x + 1][blk.y]].wall) {
+				gameEnemy->state = (rand() % 2) * 2 + 1;
+				gameEnemy->counter = 0;
+			}
+			break;
+		case 1:
+			y = gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y + 1]].wall) {
+				gameEnemy->state = (rand() % 2) * 2;
+				gameEnemy->counter = 0;
+			}
+			break;
+		case 2:
+			x = -gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x - 1][blk.y]].wall) {
+				gameEnemy->state = (rand() % 2) * 2 + 1;
+				gameEnemy->counter = 0;
+			}
+			break;
+		case 3:
+			y = -gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y - 1]].wall) {
+				gameEnemy->state = (rand() % 2) * 2;
+				gameEnemy->counter = 0;
+			}
+			break;
+		}
+		gameEnemy->position = Vector2Add(gameEnemy->position, (Vector2) { x, y });
+		gameEnemy->counter++;
+		if (gameEnemy->counter >= 10 && rand() % 200 == 44) {
+			gameEnemy->counter = 0;
+			gameEnemy->state = rand() % 6;
+		}
+	}
 }
 
 internal inline Vector2i

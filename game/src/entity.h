@@ -48,6 +48,7 @@ typedef struct _entity
     EntityProp props;
     Color color;
 	int state;
+	int counter;
 	float sightDistance;
     int height;
     int width;
@@ -66,20 +67,6 @@ AddItemToEntity(Entity *gameEntity, Item *gameItem)
 {
     switch (gameItem->type)
     {
-        case HEALTHPACK:
-        {
-            NotImplemented;
-        } break; 
-        case WEAPON:
-        {
-            NotImplemented;
-        } break;
-
-        case POWERUP:
-        {
-            NotImplemented;
-        } break;
-
         default:
         {
             InvalidCodePath;
