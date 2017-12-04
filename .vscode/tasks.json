@@ -6,20 +6,25 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "clang",
-            "args": [
-                "-g",
-                "-I ${workspaceRoot}/game/src/include",
-                "-L /usr/local/lib",
-                "-L ${workspaceRoot}/game/src/libs/osx",
-                "-lglfw",
-                "-lraylib",
-                "-framework GLUT",
-                "-framework OpenGL",
-                "-std=c99",
-                "${workspaceRoot}/game/src/main.c",
-                "-o ${workspaceRoot}/game/build/osx/main"
-            ],
+            "osx": {
+                "command": "clang",
+                "args": [
+                    "-g",
+                    "-I ${workspaceRoot}/game/src/include",
+                    "-L /usr/local/lib",
+                    "-L ${workspaceRoot}/game/src/libs/osx",
+                    "-lglfw",
+                    "-lraylib",
+                    "-framework GLUT",
+                    "-framework OpenGL",
+                    "-std=c99",
+                    "${workspaceRoot}/game/src/main.c",
+                    "-o ${workspaceRoot}/game/build/osx/main"
+                ]
+            },
+            "windows": {
+                "command": "${workspaceRoot}/game/src/build-win32-vscode.bat"
+            },
             "group": {
                 "kind": "build",
                 "isDefault": true

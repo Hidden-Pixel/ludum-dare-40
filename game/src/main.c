@@ -20,20 +20,6 @@
     #include <emscripten/emscripten.h>
 #endif
 
-//----------------------------------------------------------------------------------
-// Defines
-//----------------------------------------------------------------------------------
-#define PLAYER_INDEX            0
-#define PLAYER_BASE_SIZE        20.0f
-#define PLAYER_SPEED            8.0f
-#define PLAYER_SPEED_INCREMENT  0.25f
-#define PLAYER_SPEED_DECAY      0.95f
-
-#define ENEMY_DEFAULT_SIZE              20.0f
-#define ENEMY_DEFAULT_SPEED             1.5f
-#define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
-#define ENEMY_DEFAULT_SPEED_DECAY       0.97f
-
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
@@ -87,14 +73,14 @@ GetTileAtLocation(TileMap *gameMap, Vector2 location);
 internal inline Vector2
 GetTileCenter(TileMap *gameMap, int tileX, int tileY);
 
-internal void 
+internal bool 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
-internal int 
-AddEntity(EntityCollection *collection, Entity entity);
+internal void
+UpdateBulletPosition(float delta, Entity *bullet);
 
 internal void
-RemoveEntity(EntityCollection *collection, int entityIx);
+ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -223,6 +209,7 @@ internal void
 UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     UpdateEntitiesPosition(delta, gameMap, gameEntities, tileTypes, gameCamera);
+	ResolveEntityCollisions(gameMap, gameEntities);
 }
 
 internal void
@@ -375,46 +362,49 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
 		Vector2Scale(&tileDifference, gameEnemy->maxVelocity/dist);
 		gameEnemy->position = Vector2Add(gameEnemy->position, tileDifference);
 	}
-	else {
+	else
+    {
 		float x = 0, y = 0;
 		Vector2i blk;
-		switch (gameEnemy->state) {
-		case 0:
-			x = gameEnemy->maxVelocity / 2;
-			blk = GetTileAtLocation(gameMap, gameEnemy->position);
-			if (GlobalTileTypes.tiles[gameMap->map[blk.x + 1][blk.y]].wall) {
-				gameEnemy->state = (rand() % 2) * 2 + 1;
-				gameEnemy->counter = 0;
-			}
-			break;
-		case 1:
-			y = gameEnemy->maxVelocity / 2;
-			blk = GetTileAtLocation(gameMap, gameEnemy->position);
-			if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y + 1]].wall) {
-				gameEnemy->state = (rand() % 2) * 2;
-				gameEnemy->counter = 0;
-			}
-			break;
-		case 2:
-			x = -gameEnemy->maxVelocity / 2;
-			blk = GetTileAtLocation(gameMap, gameEnemy->position);
-			if (GlobalTileTypes.tiles[gameMap->map[blk.x - 1][blk.y]].wall) {
-				gameEnemy->state = (rand() % 2) * 2 + 1;
-				gameEnemy->counter = 0;
-			}
-			break;
-		case 3:
-			y = -gameEnemy->maxVelocity / 2;
-			blk = GetTileAtLocation(gameMap, gameEnemy->position);
-			if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y - 1]].wall) {
-				gameEnemy->state = (rand() % 2) * 2;
-				gameEnemy->counter = 0;
-			}
-			break;
+		switch (gameEnemy->state)
+        {
+            case 0:
+                x = gameEnemy->maxVelocity / 2;
+                blk = GetTileAtLocation(gameMap, gameEnemy->position);
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x + 1][blk.y]].wall) {
+                    gameEnemy->state = (rand() % 2) * 2 + 1;
+                    gameEnemy->counter = 0;
+                }
+                break;
+            case 1:
+                y = gameEnemy->maxVelocity / 2;
+                blk = GetTileAtLocation(gameMap, gameEnemy->position);
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y + 1]].wall) {
+                    gameEnemy->state = (rand() % 2) * 2;
+                    gameEnemy->counter = 0;
+                }
+                break;
+            case 2:
+                x = -gameEnemy->maxVelocity / 2;
+                blk = GetTileAtLocation(gameMap, gameEnemy->position);
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x - 1][blk.y]].wall) {
+                    gameEnemy->state = (rand() % 2) * 2 + 1;
+                    gameEnemy->counter = 0;
+                }
+                break;
+            case 3:
+                y = -gameEnemy->maxVelocity / 2;
+                blk = GetTileAtLocation(gameMap, gameEnemy->position);
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y - 1]].wall) {
+                    gameEnemy->state = (rand() % 2) * 2;
+                    gameEnemy->counter = 0;
+                }
+                break;
 		}
 		gameEnemy->position = Vector2Add(gameEnemy->position, (Vector2) { x, y });
 		gameEnemy->counter++;
-		if (gameEnemy->counter >= 10 && rand() % 200 == 44) {
+		if (gameEnemy->counter >= 10 && rand() % 200 == 44)
+        {
 			gameEnemy->counter = 0;
 			gameEnemy->state = rand() % 6;
 		}
@@ -460,18 +450,80 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
                 UpdateEnemyPosition(delta, gameEntities->list[PLAYER_INDEX], &gameEntities->list[i], gameMap);
             } break;
 
+			case WEAPON:
+			{
+				switch(gameEntities->list[i].props.subType)
+				{
+					case BULLET:
+						UpdateBulletPosition(delta, &gameEntities->list[i]);
+						break;
+					default:
+						validEntity = false;
+						break;
+				}
+			} break;
+
             default:
             {
 				validEntity = false;
             } break;
         }
 		if (validEntity) {
-			HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
+			bool collisionWithTile = HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
+			bool removed = HandleEntityActions(gameMap, gameEntities, i, collisionWithTile);
+			// if the entity died, removed, etc reprocess the current index
+			if (removed) {
+				i--;
+			}
 		}
     }
 }
 
+internal void
+UpdateBulletPosition(float delta, Entity *bullet)
+{
+	Vector2 frameVel = bullet->velocity;
+	Vector2Scale(&frameVel, delta);
+	bullet->position = Vector2Add(bullet->position, frameVel);
+}
+
 internal void 
+ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
+{
+	for (int i = 0; i < gameEntities->capacity - 1; i++) {
+		for (int j = i + 1; j < gameEntities->capacity; j++) {
+			Entity *e1 = &gameEntities->list[i];
+			Entity *e2 = &gameEntities->list[j];
+			float rad = (e1->width + e2->width) / 2.0;
+			Vector2 diff = Vector2Subtract(e1->position, e2->position);
+			//fast check before distance formula
+			if (abs(diff.x) > rad || abs(diff.y) > rad) {
+				continue;
+			}
+			//possible collision
+			
+			float dist = Vector2Length(diff);
+			if (dist >= rad) {
+				continue;
+			}
+			//definite collision
+			
+			//how far to push back each entity
+			float pushBack = (rad - dist) / 2;
+
+			//normal vector pointing from e2 to e1
+			Vector2Divide(&diff, dist);
+
+			//push back vector pointing from e2 to e1
+			Vector2Scale(&diff, pushBack);
+
+			e1->position = Vector2Add(e1->position, diff);
+			e2->position = Vector2Subtract(e2->position, diff);
+		}
+	}
+}
+
+internal bool 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes) 
 {
 	Vector2i currentTile = GetTileAtLocation(gameMap, entity->position);
@@ -482,6 +534,7 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 	int xDir = (entity->velocity.x > 0) ? 1 : -1;
 	int y = (entity->velocity.y > 0) ? ((int)currentTile.y)-1 : ((int)currentTile.y)+1;
 	int yDir = (entity->velocity.y > 0) ? 1 : -1;
+	bool collided = false;
 
 	// check all tiles around the entity
 	for (int i = 0; i < 3; i++)
@@ -501,6 +554,7 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			Vector3 move = RectCollision3(tileTl, tileBr, entityTl, entityBr);
 			if (move.z) 
 			{
+				collided = true;
 				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
 				if (move.x != 0)
 				{
@@ -513,25 +567,6 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			}
 		}
 	}
-}
 
-internal int 
-AddEntity(EntityCollection *collection, Entity entity)
-{
-	if (collection->capacity >= MAX_ENTITIES)
-		InvalidCodePath;
-
-	collection->list[collection->capacity] = entity;
-	collection->capacity++;
-	return collection->capacity-1;
-}
-
-internal void
-RemoveEntity(EntityCollection *collection, int entityIx)
-{
-	collection->list[entityIx] = collection->list[collection->capacity-1];
-	collection->list[collection->capacity-1].props.type = NOENTITYTYPE;
-	collection->list[collection->capacity-1].props.subType = NOENTITYSUBTYPE;
-	collection->list[collection->capacity-1].props.attributes = NOENTITYATTRIBUTES;
-	collection->capacity--;
+	return collided;
 }
