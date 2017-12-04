@@ -382,7 +382,7 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
 		gameEnemy->counter++;
 		if (gameEnemy->counter >= 10 && rand() % 200 == 44) {
 			gameEnemy->counter = 0;
-			gameEnemy->state = rand() % 5;
+			gameEnemy->state = rand() % 6;
 		}
 	}
 }
