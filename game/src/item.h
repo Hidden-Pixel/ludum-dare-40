@@ -56,12 +56,11 @@ AddItem(ItemCollection *collection, Item item)
 }
 
 internal void
-RemoveItem(ItemCollection *collection, int itemId)
+RemoveItem(ItemCollection *collection, int itemIndex)
 {
-    int i= (collection->capacity - 1);
-    collection->list[itemId] = collection->list[i];
-    collection->list[i].type = NOITEMSUBTYPE;
-    collection->list[i].subType = NOITEMSUBTYPE;
+    collection->list[itemIndex] = collection->list[itemIndex];
+    collection->list[itemIndex].type = NOITEMSUBTYPE;
+    collection->list[itemIndex].subType = NOITEMSUBTYPE;
     collection->capacity--;
 }
 

@@ -165,8 +165,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     {
         gameEntities->size = MAX_ENTITIES;
         int i;
-        // TODO(nick): add 5 enemies back!
-        for (i = 0; i < 0; ++i)
+        for (i = 0; i < 2; ++i)
         {
 			Entity skel =
             {
@@ -191,12 +190,12 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     {
         int i;
         gameItems->size = 32;
-        for (i = 0; i < 1; ++i)
+        for (i = 0; i < 5; ++i)
         {
             // TODO(nick): random item generation
             Item item = 
             {
-                .position = { 100, 100 + i * 40},
+                .position = { 100, 80 + i * 40},
                 .color = YELLOW,
                 .height = 10,
                 .width = 10,
@@ -519,8 +518,9 @@ ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection 
         }
         else
         {
-            // TODO(nick)
+            // TODO(nick): pick up item
             //NotImplemented;
+            RemoveItem(gameItems, i);
         }
         // if item is close enough, check for pick up
     }
