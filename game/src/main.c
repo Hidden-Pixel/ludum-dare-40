@@ -49,7 +49,6 @@ global_variable TileTypes GlobalTileTypes;
 global_variable Camera2D GlobalCamera;
 
 global_variable EntityCollection GlobalEntities;
-
 global_variable ItemCollection GlobalItems;
 
 //------------------------------------------------------------------------------------
@@ -127,7 +126,7 @@ int main(void)
 }
 
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, TileTypes *gameTileTypes)
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes)
 {
 	// camera setup
 	{
@@ -195,6 +194,22 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 				.width = ENEMY_DEFAULT_SIZE
 			};
 			AddEntity(gameEntities, skel);
+        }
+    }
+
+    // items setup
+    {
+        int i;
+        gameItems->size = 32;
+        for (i = 0; i < gameItems->size; ++i)
+        {
+            // TODO(nick): random item generation
+            Item item = 
+            {
+                PICKUP,
+                HEALTHPACK,
+            };
+            AddItem(gameItems, item);
         }
     }
 }

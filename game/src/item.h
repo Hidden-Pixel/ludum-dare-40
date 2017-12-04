@@ -6,7 +6,7 @@
 #ifndef __ITEM_H__
 #define __ITEM_H__ 1
 
-#define MAX_ITEMS 256
+#define MAX_ITEMS 32
 
 typedef enum _itemType
 {
@@ -27,8 +27,14 @@ typedef enum _itemSubType
 
 typedef struct _item
 {
+    Vector2 position;
+    Vector3 collider;
+    Color color;
+    int height;
+    int width;
+    float rotation; // NOTE(nick): item spinning / shrinking?
     unsigned char type;
-    unsigned char subtype;
+    unsigned char subType;
 } Item;
 
 typedef struct _itemCollection
@@ -37,5 +43,27 @@ typedef struct _itemCollection
     int size;
     int capacity;
 } ItemCollection;
+
+internal int
+AddItem(ItemCollection *collection, Item item)
+{
+    if (collection->capacity >= MAX_ITEMS)
+    {
+        InvalidCodePath;
+    }
+    collection->list[collection->capacity] = item;
+    collection->capacity++;
+    return (collection->capacity - 1);
+}
+
+internal void
+RemoveItem(ItemCollection *collection, int itemId)
+{
+    int i= (collection->capacity - 1);
+    collection->list[itemId] = collection->list[i];
+    collection->list[i].type = NOITEMSUBTYPE;
+    collection->list[i].subType = NOITEMSUBTYPE;
+    collection->capacity--;
+}
 
 #endif
