@@ -112,7 +112,7 @@ internal Entity GetBullet(Entity *spawnEntity) {
         spawnEntity->position.y + (spawnEntity->height/2) :
         spawnEntity->position.y - (spawnEntity->height/2);
     bullet.direction = (Vector2) {spawnEntity->direction.x, spawnEntity->direction.y};
-    bullet.velocity = (Vector2) {bullet.direction.x, bullet.direction.y};
+    bullet.velocity = Vector2Subtract(bullet.direction, bullet.position);
     Vector2Normalize(&bullet.velocity);
     Vector2Scale(&bullet.velocity, bullet.maxVelocity);
     return bullet;
