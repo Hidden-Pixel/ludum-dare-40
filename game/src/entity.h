@@ -127,6 +127,15 @@ HandlePlayerAction(EntityCollection *collection, Entity *entity) {
     }
 }
 
+internal bool HandleWeaponAction(Entity *entity, bool collisionWithTile) {
+    switch (entity->props.subType) {
+        case BULLET:
+            if (collisionWithTile) return true;
+        default:
+            return false;
+    }
+}
+
 internal bool
 HandleEntityActions(TileMap *gameMap, EntityCollection *collection, int entityIx, bool collisionWithTile) {
     Entity entity = collection->list[entityIx];
@@ -140,15 +149,6 @@ HandleEntityActions(TileMap *gameMap, EntityCollection *collection, int entityIx
                 return true;
             }
             return false;            
-        default:
-            return false;
-    }
-}
-
-internal bool HandleWeaponAction(Entity *entity, bool collisionWithTile) {
-    switch (entity->props.subType) {
-        case BULLET:
-            if (collisionWithTile) return true;
         default:
             return false;
     }
