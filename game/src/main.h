@@ -17,6 +17,22 @@
 #define NotImplemented assert(!"NotImplemented")
 #define InvalidCodePath assert(!"InvalidCodePath")
 
+//----------------------------------------------------------------------------------
+// Defines
+//----------------------------------------------------------------------------------
+#define PLAYER_INDEX            0
+#define PLAYER_BASE_SIZE        20.0f
+#define PLAYER_SPEED            8.0f
+#define PLAYER_SPEED_INCREMENT  0.25f
+#define PLAYER_SPEED_DECAY      0.95f
+
+#define ENEMY_DEFAULT_SIZE              20.0f
+#define ENEMY_DEFAULT_SPEED             1.5f
+#define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
+#define ENEMY_DEFAULT_SPEED_DECAY       0.97f
+
+#define COLLISION_BUFFER 10.0f
+
 #define LEVEL_SIZE 100
 
 #ifndef max
