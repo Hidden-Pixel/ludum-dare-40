@@ -61,13 +61,13 @@ internal void
 UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
-DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
+DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 UnloadGame(void);
 
 internal void
-UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
+UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -114,7 +114,7 @@ int main(void)
     SetTargetFPS(60);
 	while (!WindowShouldClose())
 	{
-		UpdateDrawFrame(&GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
+		UpdateDrawFrame(&GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
 	}
 #endif
 
@@ -201,13 +201,18 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     {
         int i;
         gameItems->size = 32;
-        for (i = 0; i < gameItems->size; ++i)
+        for (i = 0; i < 10; ++i)
         {
             // TODO(nick): random item generation
             Item item = 
             {
-                PICKUP,
-                HEALTHPACK,
+                .position = { 100, 100 + i * 40},
+                .color = YELLOW,
+                .height = 10,
+                .width = 10,
+                .rotation = 0.0f,
+                .type = PICKUP,
+                .subType = HEALTHPACK,
             };
             AddItem(gameItems, item);
         }
@@ -233,7 +238,7 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 }
 
 internal void
-DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
+DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     BeginDrawing();
     Entity *gamePlayer = &gameEntities->list[PLAYER_INDEX];
@@ -275,7 +280,18 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
         int i;
         for (i = (PLAYER_INDEX + 1); i < gameEntities->size; ++i)
         {
-            DrawRectangle(gameEntities->list[i].position.x - gameEntities->list[i].width / 2, gameEntities->list[i].position.y - gameEntities->list[i].height / 2, gameEntities->list[i].width, gameEntities->list[i].height, gameEntities->list[i].color);
+            DrawRectangle(gameEntities->list[i].position.x - gameEntities->list[i].width / 2,
+                          gameEntities->list[i].position.y - gameEntities->list[i].height / 2,
+                          gameEntities->list[i].width, gameEntities->list[i].height,
+                          gameEntities->list[i].color);
+        }
+
+        for (i = 0; i < gameItems->capacity; ++i)
+        {
+            DrawRectangle(gameItems->list[i].position.x - gameItems->list[i].width / 2,
+                          gameItems->list[i].position.y - gameItems->list[i].height / 2,
+                          gameItems->list[i].width, gameEntities->list[i].height,
+                          gameItems->list[i].color);
         }
 	}
 
@@ -292,10 +308,10 @@ UnloadGame(void)
 
 // Update and Draw (one frame)
 internal void
-UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
+UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera)
 {
 	UpdateGame(1, gameMap, gameEntities, tileTypes, gameCamera);
-	DrawGame(gameMap, gameEntities, tileTypes, gameCamera);
+	DrawGame(gameMap, gameEntities, gameItems, tileTypes, gameCamera);
 }
 
 // Updates the player's position based on the keyboard input

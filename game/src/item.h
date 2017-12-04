@@ -28,7 +28,6 @@ typedef enum _itemSubType
 typedef struct _item
 {
     Vector2 position;
-    Vector3 collider;
     Color color;
     int height;
     int width;
