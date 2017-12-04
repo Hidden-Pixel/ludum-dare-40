@@ -32,8 +32,6 @@
 #define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
 #define ENEMY_DEFAULT_SPEED_DECAY       0.97f
 
-#define COLLISION_BUFFER 10.0f
-
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
@@ -164,7 +162,9 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 			.velocity = {0, 0},
 			.color = WHITE,
 			.maxVelocity = PLAYER_SPEED,
-			.props.type = PLAYER
+			.props.type = PLAYER,
+      .width = PLAYER_BASE_SIZE,
+      .height = PLAYER_BASE_SIZE
 		};
 		AddEntity(gameEntities, player);
 	}
@@ -185,7 +185,9 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 				.props.subType = SKELETON,
 				.props.attributes = NOATTRIBUTES,
 				.state = 0,
-				.sightDistance = 10.0f
+				.sightDistance = 10.0f,
+        .height = ENEMY_DEFAULT_SIZE,
+        .width = ENEMY_DEFAULT_SIZE
 			};
 
 			AddEntity(gameEntities, skel);
@@ -248,13 +250,13 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
 		}
 
         // draw player
-		DrawRectangle(gamePlayer->position.x - PLAYER_BASE_SIZE / 2, gamePlayer->position.y - PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, gamePlayer->color);
+		DrawRectangle(gamePlayer->position.x - gamePlayer->width / 2, gamePlayer->position.y - gamePlayer->height / 2, gamePlayer->width, gamePlayer->height, gamePlayer->color);
 
         // draw enemies
         int i;
         for (i = (PLAYER_INDEX + 1); i < gameEntities->size; ++i)
         {
-            DrawRectangle(gameEntities->list[i].position.x - ENEMY_DEFAULT_SPEED / 2, gameEntities->list[i].position.y - ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, gameEntities->list[i].color);
+            DrawRectangle(gameEntities->list[i].position.x - gameEntities->list[i].width / 2, gameEntities->list[i].position.y - gameEntities->list[i].height / 2, gameEntities->list[i].width, gameEntities->list[i].height, gameEntities->list[i].color);
         }
 	}
 
@@ -416,9 +418,8 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 
 			Vector2 tileTl = (Vector2){gameMap->tileWidth*testX, gameMap->tileWidth*testY};
 			Vector2 tileBr = (Vector2){tileTl.x+gameMap->tileWidth, tileTl.y+gameMap->tileHeight};
-			//TODO: Use collision box here, not entity's box
-			Vector2 entityTl = (Vector2){entity->position.x-(PLAYER_BASE_SIZE/2), entity->position.y-(COLLISION_BUFFER/2)};
-			Vector2 entityBr = (Vector2){entity->position.x+(PLAYER_BASE_SIZE/2), entity->position.y+(COLLISION_BUFFER/2)};
+			Vector2 entityTl = (Vector2){entity->position.x-(entity->width/2), entity->position.y-(entity->height/2)};
+			Vector2 entityBr = (Vector2){entity->position.x+(entity->width/2), entity->position.y+(entity->height/2)};
 			Vector3 move = RectCollision3(tileTl, tileBr, entityTl, entityBr);
 			if (move.z) 
 			{

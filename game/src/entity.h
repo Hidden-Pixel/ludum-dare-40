@@ -59,6 +59,8 @@ typedef struct _entity
     Color color;
 	int state;
 	float sightDistance;
+    int height;
+    int width;
 } Entity;
 
 typedef struct _entityCollection
