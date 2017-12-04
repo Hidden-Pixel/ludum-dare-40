@@ -185,9 +185,10 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 				.props.subType = SKELETON,
 				.props.attributes = NOATTRIBUTES,
 				.state = 0,
-				.sightDistance = 10.0f,
-        .height = ENEMY_DEFAULT_SIZE,
-        .width = ENEMY_DEFAULT_SIZE
+				.sightDistance = 4.0f,
+				.counter = 0,
+				.height = ENEMY_DEFAULT_SIZE,
+				.width = ENEMY_DEFAULT_SIZE
 			};
 
 			AddEntity(gameEntities, skel);
@@ -339,7 +340,51 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
     {
 		Vector2Scale(&tileDifference, gameEnemy->maxVelocity/dist);
 		gameEnemy->position = Vector2Add(gameEnemy->position, tileDifference);
-    }
+	}
+	else {
+		float x = 0, y = 0;
+		Vector2i blk;
+		switch (gameEnemy->state) {
+		case 0:
+			x = gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x + 1][blk.y]].wall) {
+				gameEnemy->state = (rand() % 2) * 2 + 1;
+				gameEnemy->counter = 0;
+			}
+			break;
+		case 1:
+			y = gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y + 1]].wall) {
+				gameEnemy->state = (rand() % 2) * 2;
+				gameEnemy->counter = 0;
+			}
+			break;
+		case 2:
+			x = -gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x - 1][blk.y]].wall) {
+				gameEnemy->state = (rand() % 2) * 2 + 1;
+				gameEnemy->counter = 0;
+			}
+			break;
+		case 3:
+			y = -gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y - 1]].wall) {
+				gameEnemy->state = (rand() % 2) * 2;
+				gameEnemy->counter = 0;
+			}
+			break;
+		}
+		gameEnemy->position = Vector2Add(gameEnemy->position, (Vector2) { x, y });
+		gameEnemy->counter++;
+		if (gameEnemy->counter >= 10 && rand() % 200 == 44) {
+			gameEnemy->counter = 0;
+			gameEnemy->state = rand() % 5;
+		}
+	}
 }
 
 internal inline Vector2i

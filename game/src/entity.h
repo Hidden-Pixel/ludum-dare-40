@@ -58,6 +58,7 @@ typedef struct _entity
     EntityProp props;
     Color color;
 	int state;
+	int counter;
 	float sightDistance;
     int height;
     int width;
