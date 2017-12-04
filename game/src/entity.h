@@ -96,7 +96,8 @@ RemoveEntity(EntityCollection *collection, int entityIx)
 	collection->capacity--;
 }
 
-internal Entity GetBullet(Entity *spawnEntity)
+internal Entity
+GetBullet(Entity *spawnEntity)
 {
     Entity bullet = (Entity){
         .props.type = ENEMY,
@@ -153,7 +154,8 @@ HandleEntityActions(TileMap *gameMap, EntityCollection *collection, int entityIx
     }
 }
 
-internal bool HandleWeaponAction(Entity *entity, bool collisionWithTile)
+internal bool
+HandleWeaponAction(Entity *entity, bool collisionWithTile)
 {
     switch (entity->props.subType)
     {

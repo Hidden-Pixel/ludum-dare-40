@@ -44,7 +44,7 @@ internal void
 InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
+UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -81,6 +81,9 @@ UpdateBulletPosition(float delta, Entity *bullet);
 
 internal void
 ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities);
+
+internal void
+ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection *gameItems);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -162,7 +165,8 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     {
         gameEntities->size = MAX_ENTITIES;
         int i;
-        for (i = 0; i < 10; ++i)
+        // TODO(nick): add 5 enemies back!
+        for (i = 0; i < 0; ++i)
         {
 			Entity skel =
             {
@@ -187,7 +191,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     {
         int i;
         gameItems->size = 32;
-        for (i = 0; i < 10; ++i)
+        for (i = 0; i < 1; ++i)
         {
             // TODO(nick): random item generation
             Item item = 
@@ -206,10 +210,11 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 }
 
 internal void
-UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
+UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     UpdateEntitiesPosition(delta, gameMap, gameEntities, tileTypes, gameCamera);
 	ResolveEntityCollisions(gameMap, gameEntities);
+    ResolvePlayerItemCollision(gameMap, &gameEntities->list[PLAYER_INDEX], gameItems);
 }
 
 internal void
@@ -273,6 +278,7 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameI
                           gameEntities->list[i].color);
         }
 
+        // draw items
         for (i = 0; i < gameItems->capacity; ++i)
         {
             DrawRectangle(gameItems->list[i].position.x - gameItems->list[i].width / 2,
@@ -297,7 +303,7 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera)
 {
-	UpdateGame(1, gameMap, gameEntities, tileTypes, gameCamera);
+	UpdateGame(1, gameMap, gameEntities, gameItems, tileTypes, gameCamera);
 	DrawGame(gameMap, gameEntities, gameItems, tileTypes, gameCamera);
 }
 
@@ -468,7 +474,8 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
 				validEntity = false;
             } break;
         }
-		if (validEntity) {
+		if (validEntity)
+        {
 			bool collisionWithTile = HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
 			bool removed = HandleEntityActions(gameMap, gameEntities, i, collisionWithTile);
 			// if the entity died, removed, etc reprocess the current index
@@ -487,6 +494,38 @@ UpdateBulletPosition(float delta, Entity *bullet)
 	bullet->position = Vector2Add(bullet->position, frameVel);
 }
 
+internal void
+ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection *gameItems)
+{
+    Vector2 diff = Vector2Zero();
+    float dist = 0.0f;
+    float rad = 0.0f;
+    int i;
+    for (i = 0; i < gameItems->capacity; ++i)
+    {
+        // TODO(nick): wrap this up to a function? and use in both as well
+        // check if player is close to item
+        rad = (gamePlayer->width + gameItems->list[i].width) / 2.0f;
+        diff = Vector2Subtract(gamePlayer->position, gameItems->list[i].position);
+        if (abs(diff.x) > rad || abs(diff.y) > rad)
+        {
+            continue;
+        }
+
+	    dist = Vector2Length(diff);
+        if (dist > rad)
+        {
+            continue;
+        }
+        else
+        {
+            // TODO(nick)
+            //NotImplemented;
+        }
+        // if item is close enough, check for pick up
+    }
+}
+
 internal void 
 ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 {
@@ -497,7 +536,8 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 			float rad = (e1->width + e2->width) / 2.0;
 			Vector2 diff = Vector2Subtract(e1->position, e2->position);
 			//fast check before distance formula
-			if (abs(diff.x) > rad || abs(diff.y) > rad) {
+			if (abs(diff.x) > rad || abs(diff.y) > rad)
+            {
 				continue;
 			}
 			//possible collision
