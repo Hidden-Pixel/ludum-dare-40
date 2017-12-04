@@ -157,15 +157,16 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 	// player setup
 	{
 		Vector2 playerStart = GetTileCenter(gameMap, 1, 1);
-		gameEntities->list[PLAYER_INDEX].position.x = playerStart.x;
-		gameEntities->list[PLAYER_INDEX].position.y = playerStart.y;
-		gameEntities->list[PLAYER_INDEX].velocity.x = 0;
-        gameEntities->list[PLAYER_INDEX].velocity.y = 0;
-		gameEntities->list[PLAYER_INDEX].color = WHITE;
-		gameEntities->list[PLAYER_INDEX].maxVelocity = PLAYER_SPEED;
-		gameEntities->list[PLAYER_INDEX].props.type = PLAYER;
-		gameEntities->list[PLAYER_INDEX].width = PLAYER_BASE_SIZE;
-		gameEntities->list[PLAYER_INDEX].height = PLAYER_BASE_SIZE;
+		Entity player = {
+			.position = {playerStart.x, playerStart.y},
+			.velocity = {0, 0},
+			.color = WHITE,
+			.maxVelocity = PLAYER_SPEED,
+			.props.type = PLAYER,
+      .width = PLAYER_BASE_SIZE,
+      .height = PLAYER_BASE_SIZE
+		};
+		AddEntity(gameEntities, player);
 	}
 
     // enemies setup
@@ -173,20 +174,23 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
         // TODO(nick): figure out a way to spawn x amount of enemies near the player
         gameEntities->size = MAX_ENTITIES;
         int i;
-        for (i = PLAYER_INDEX + 1; i < 2; ++i)
+        for (i = 0; i < 10; ++i)
         {
-			Vector2 enemyStart = GetTileCenter(gameMap, 4, 4);
-            gameEntities->list[i].position.x = enemyStart.x;
-            gameEntities->list[i].position.y = enemyStart.y;
-            gameEntities->list[i].velocity.x = 0;
-            gameEntities->list[i].velocity.y = 0;
-            gameEntities->list[i].color = PURPLE;
-            gameEntities->list[i].maxVelocity = ENEMY_DEFAULT_SPEED;
-            gameEntities->list[i].props.type = ENEMY; 
-            gameEntities->list[i].props.subType = SKELETON;
-            gameEntities->list[i].props.attributes = NOATTRIBUTES;
-			gameEntities->list[i].height = ENEMY_DEFAULT_SIZE;
-			gameEntities->list[i].width = ENEMY_DEFAULT_SIZE;
+			Entity skel = {
+				.position = {80, 80 + i * 40},
+				.velocity = {0, 0},
+				.color = PURPLE,
+				.maxVelocity = ENEMY_DEFAULT_SPEED,
+				.props.type = ENEMY,
+				.props.subType = SKELETON,
+				.props.attributes = NOATTRIBUTES,
+				.state = 0,
+				.sightDistance = 10.0f,
+        .height = ENEMY_DEFAULT_SIZE,
+        .width = ENEMY_DEFAULT_SIZE
+			};
+
+			AddEntity(gameEntities, skel);
         }
     }
 }
@@ -330,8 +334,8 @@ internal void
 UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *gameMap)
 {
     Vector2 tileDifference = Vector2Subtract(gamePlayer.position, gameEnemy->position);
-	  float dist = Vector2Length(tileDifference);
-    if (dist/gameMap->tileWidth <= 5)
+	float dist = Vector2Length(tileDifference);
+    if (dist > 0.01 && dist/gameMap->tileWidth <= gameEnemy->sightDistance)
     {
 		Vector2Scale(&tileDifference, gameEnemy->maxVelocity/dist);
 		gameEnemy->position = Vector2Add(gameEnemy->position, tileDifference);
