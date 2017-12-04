@@ -18,8 +18,6 @@
     #include <emscripten/emscripten.h>
 #endif
 
-
-
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
@@ -139,13 +137,16 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 	// player setup
 	{
 		Vector2 playerStart = GetTileCenter(gameMap, 1, 1);
-		gameEntities->list[PLAYER_INDEX].position.x = playerStart.x;
-		gameEntities->list[PLAYER_INDEX].position.y = playerStart.y;
-		gameEntities->list[PLAYER_INDEX].velocity.x = 0;
-        gameEntities->list[PLAYER_INDEX].velocity.y = 0;
-		gameEntities->list[PLAYER_INDEX].color = WHITE;
-		gameEntities->list[PLAYER_INDEX].maxVelocity = PLAYER_SPEED;
-		gameEntities->list[PLAYER_INDEX].props.type = PLAYER;
+		Entity player = {
+			.position = {playerStart.x, playerStart.y},
+			.velocity = {0, 0},
+			.color = WHITE,
+			.maxVelocity = PLAYER_SPEED,
+			.props.type = PLAYER,
+      .width = PLAYER_BASE_SIZE,
+      .height = PLAYER_BASE_SIZE
+		};
+		AddEntity(gameEntities, player);
 	}
 
     // enemies setup
@@ -153,17 +154,24 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
         // TODO(nick): figure out a way to spawn x amount of enemies near the player
         gameEntities->size = MAX_ENTITIES;
         int i;
-        for (i = PLAYER_INDEX + 1; i < 2; ++i)
+        for (i = 0; i < 10; ++i)
         {
-            gameEntities->list[i].position.x = 80;
-            gameEntities->list[i].position.y = 80;
-            gameEntities->list[i].velocity.x = 0;
-            gameEntities->list[i].velocity.y = 0;
-            gameEntities->list[i].color = PURPLE;
-            gameEntities->list[i].maxVelocity = ENEMY_DEFAULT_SPEED;
-            gameEntities->list[i].props.type = ENEMY; 
-            gameEntities->list[i].props.subType = SKELETON;
-            gameEntities->list[i].props.attributes = NOATTRIBUTES;
+			Entity skel = {
+				.position = {80, 80 + i * 40},
+				.velocity = {0, 0},
+				.color = PURPLE,
+				.maxVelocity = ENEMY_DEFAULT_SPEED,
+				.props.type = ENEMY,
+				.props.subType = SKELETON,
+				.props.attributes = NOATTRIBUTES,
+				.state = 0,
+				.sightDistance = 4.0f,
+				.counter = 0,
+				.height = ENEMY_DEFAULT_SIZE,
+				.width = ENEMY_DEFAULT_SIZE
+			};
+
+			AddEntity(gameEntities, skel);
         }
     }
 }
@@ -223,13 +231,13 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
 		}
 
         // draw player
-		DrawRectangle(gamePlayer->position.x - PLAYER_BASE_SIZE / 2, gamePlayer->position.y - PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, PLAYER_BASE_SIZE, gamePlayer->color);
+		DrawRectangle(gamePlayer->position.x - gamePlayer->width / 2, gamePlayer->position.y - gamePlayer->height / 2, gamePlayer->width, gamePlayer->height, gamePlayer->color);
 
         // draw enemies
         int i;
         for (i = (PLAYER_INDEX + 1); i < gameEntities->size; ++i)
         {
-            DrawRectangle(gameEntities->list[i].position.x - ENEMY_DEFAULT_SPEED / 2, gameEntities->list[i].position.y - ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, ENEMY_DEFAULT_SIZE, gameEntities->list[i].color);
+            DrawRectangle(gameEntities->list[i].position.x - gameEntities->list[i].width / 2, gameEntities->list[i].position.y - gameEntities->list[i].height / 2, gameEntities->list[i].width, gameEntities->list[i].height, gameEntities->list[i].color);
         }
 	}
 
@@ -307,12 +315,56 @@ internal void
 UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *gameMap)
 {
     Vector2 tileDifference = Vector2Subtract(gamePlayer.position, gameEnemy->position);
-	  float dist = Vector2Length(tileDifference);
-    if (dist/gameMap->tileWidth <= 5)
+	float dist = Vector2Length(tileDifference);
+    if (dist > 0.01 && dist/gameMap->tileWidth <= gameEnemy->sightDistance)
     {
 		Vector2Scale(&tileDifference, gameEnemy->maxVelocity/dist);
 		gameEnemy->position = Vector2Add(gameEnemy->position, tileDifference);
-    }
+	}
+	else {
+		float x = 0, y = 0;
+		Vector2i blk;
+		switch (gameEnemy->state) {
+		case 0:
+			x = gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x + 1][blk.y]].wall) {
+				gameEnemy->state = (rand() % 2) * 2 + 1;
+				gameEnemy->counter = 0;
+			}
+			break;
+		case 1:
+			y = gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y + 1]].wall) {
+				gameEnemy->state = (rand() % 2) * 2;
+				gameEnemy->counter = 0;
+			}
+			break;
+		case 2:
+			x = -gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x - 1][blk.y]].wall) {
+				gameEnemy->state = (rand() % 2) * 2 + 1;
+				gameEnemy->counter = 0;
+			}
+			break;
+		case 3:
+			y = -gameEnemy->maxVelocity / 2;
+			blk = GetTileAtLocation(gameMap, gameEnemy->position);
+			if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y - 1]].wall) {
+				gameEnemy->state = (rand() % 2) * 2;
+				gameEnemy->counter = 0;
+			}
+			break;
+		}
+		gameEnemy->position = Vector2Add(gameEnemy->position, (Vector2) { x, y });
+		gameEnemy->counter++;
+		if (gameEnemy->counter >= 10 && rand() % 200 == 44) {
+			gameEnemy->counter = 0;
+			gameEnemy->state = rand() % 6;
+		}
+	}
 }
 
 internal inline Vector2i
@@ -391,9 +443,8 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 
 			Vector2 tileTl = (Vector2){gameMap->tileWidth*testX, gameMap->tileWidth*testY};
 			Vector2 tileBr = (Vector2){tileTl.x+gameMap->tileWidth, tileTl.y+gameMap->tileHeight};
-			//TODO: Use collision box here, not entity's box
-			Vector2 entityTl = (Vector2){entity->position.x-(PLAYER_BASE_SIZE/2), entity->position.y-(COLLISION_BUFFER/2)};
-			Vector2 entityBr = (Vector2){entity->position.x+(PLAYER_BASE_SIZE/2), entity->position.y+(COLLISION_BUFFER/2)};
+			Vector2 entityTl = (Vector2){entity->position.x-(entity->width/2), entity->position.y-(entity->height/2)};
+			Vector2 entityBr = (Vector2){entity->position.x+(entity->width/2), entity->position.y+(entity->height/2)};
 			Vector3 move = RectCollision3(tileTl, tileBr, entityTl, entityBr);
 			if (move.z) 
 			{

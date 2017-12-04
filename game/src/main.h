@@ -31,8 +31,6 @@
 #define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
 #define ENEMY_DEFAULT_SPEED_DECAY       0.97f
 
-#define COLLISION_BUFFER 10.0f
-
 #define LEVEL_SIZE 100
 
 #ifndef max
