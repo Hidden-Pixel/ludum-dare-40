@@ -93,6 +93,9 @@ AddEntity(EntityCollection *collection, Entity entity);
 internal void
 RemoveEntity(EntityCollection *collection, int entityIx);
 
+internal void
+ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities);
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -200,6 +203,7 @@ internal void
 UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     UpdateEntitiesPosition(delta, gameMap, gameEntities, tileTypes, gameCamera);
+	ResolveEntityCollisions(gameMap, gameEntities);
 }
 
 internal void
@@ -437,6 +441,41 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
     }
 }
 
+internal void 
+ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
+{
+	for (int i = 0; i < gameEntities->capacity - 1; i++) {
+		for (int j = i + 1; j < gameEntities->capacity; j++) {
+			Entity *e1 = &gameEntities->list[i];
+			Entity *e2 = &gameEntities->list[j];
+			float rad = (e1->width + e2->width) / 2.0;
+			Vector2 diff = Vector2Subtract(e1->position, e2->position);
+			//fast check before distance formula
+			if (abs(diff.x) > rad || abs(diff.y) > rad) {
+				continue;
+			}
+			//possible collision
+			
+			float dist = Vector2Length(diff);
+			if (dist >= rad) {
+				continue;
+			}
+			//definite collision
+			
+			//how far to push back each entity
+			float pushBack = (rad - dist) / 2;
+
+			//normal vector pointing from e2 to e1
+			Vector2Divide(&diff, dist);
+
+			//push back vector pointing from e2 to e1
+			Vector2Scale(&diff, pushBack);
+
+			e1->position = Vector2Add(e1->position, diff);
+			e2->position = Vector2Subtract(e2->position, diff);
+		}
+	}
+}
 
 internal void 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes) 
