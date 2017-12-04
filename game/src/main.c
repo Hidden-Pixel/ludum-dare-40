@@ -73,6 +73,9 @@ GetTileCenter(TileMap *gameMap, int tileX, int tileY);
 internal bool 
 HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes);
 
+internal void
+UpdateBulletPosition(float delta, Entity *bullet);
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -411,7 +414,7 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
 				switch(gameEntities->list[i].props.subType)
 				{
 					case BULLET:
-						UpdateBulletPosition(delta, gameEntities[i]);
+						UpdateBulletPosition(delta, &gameEntities->list[i]);
 						break;
 					default:
 						validEntity = false;
@@ -426,7 +429,7 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
         }
 		if (validEntity) {
 			bool collisionWithTile = HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
-			bool removed = HandleEntityActions(gameMap, &gameEntities, i, collisionWithTile);
+			bool removed = HandleEntityActions(gameMap, gameEntities, i, collisionWithTile);
 			// if the entity died, removed, etc reprocess the current index
 			if (removed) {
 				i--;
@@ -435,7 +438,8 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
     }
 }
 
-internal void UpdateBulletPosition(float delta, Entity *bullet)
+internal void
+UpdateBulletPosition(float delta, Entity *bullet)
 {
 	Vector2 frameVel = bullet->velocity;
 	Vector2Scale(&frameVel, delta);
