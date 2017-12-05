@@ -6,7 +6,7 @@
 #ifndef __ENTITY_H__
 #define __ENTITY_H__ 1
 
-#define MAX_ENTITIES 256
+#define MAX_ENTITIES 2048
 #define MAX_ITEM_SLOT 3
 
 typedef enum _entityType
