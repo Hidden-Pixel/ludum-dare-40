@@ -160,7 +160,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
         // TODO(nick): figure out a way to spawn x amount of enemies near the player
         gameEntities->size = MAX_ENTITIES;
         int i;
-        for (i = 0; i < 10; ++i)
+        for (i = 0; i < 0; ++i)
         {
 			Entity skel = {
 				.position = {80, 80 + i * 40},
@@ -242,7 +242,7 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
 
         // draw enemies
         int i;
-        for (i = (PLAYER_INDEX + 1); i < gameEntities->size; ++i)
+        for (i = (PLAYER_INDEX + 1); i < gameEntities->capacity; ++i)
         {
             DrawRectangle(gameEntities->list[i].position.x - gameEntities->list[i].width / 2, gameEntities->list[i].position.y - gameEntities->list[i].height / 2, gameEntities->list[i].width, gameEntities->list[i].height, gameEntities->list[i].color);
         }
@@ -392,7 +392,7 @@ internal void
 UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     int i;
-    for (i = 0; i < gameEntities->size; ++i)
+    for (i = 0; i < gameEntities->capacity; ++i)
     {
 		bool validEntity = true;
         switch (gameEntities->list[i].props.type)
