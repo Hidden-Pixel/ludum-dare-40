@@ -277,7 +277,7 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameI
 
         // draw enemies
         int i;
-        for (i = (PLAYER_INDEX + 1); i < gameEntities->size; ++i)
+        for (i = (PLAYER_INDEX + 1); i < gameEntities->capacity; ++i)
         {
             if (gameEntities->list[i].props.type != NOENTITYTYPE)
             {
@@ -454,7 +454,7 @@ internal void
 UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     int i;
-    for (i = 0; i < gameEntities->size; ++i)
+    for (i = 0; i < gameEntities->capacity; ++i)
     {
 		bool validEntity = true;
         switch (gameEntities->list[i].props.type)
