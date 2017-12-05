@@ -50,6 +50,9 @@ internal void
 DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
+DrawHud(Screen *gameScreen);
+
+internal void
 UnloadGame(void);
 
 internal void
@@ -166,7 +169,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     {
         gameEntities->size = MAX_ENTITIES;
         int i;
-        for (i = 0; i < 0; ++i)
+        for (i = 0; i < 3; ++i)
         {
 			Entity skel =
             {
@@ -192,7 +195,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
         int i;
         gameItems->size = 32;
         gameItems->capacity = 0;
-        for (i = 0; i < 2; ++i)
+        for (i = 0; i < 5; ++i)
         {
             // TODO(nick): random item generation
             Item item = 
@@ -303,6 +306,12 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameI
 }
 
 internal void
+DrawHud(Screen *gameScreen)
+{
+    DrawText(FormatText("Health: %03i", 100), 20, 20, 20, RED);
+}
+
+internal void
 UnloadGame(void)
 {
     // TODO: Unload all dynamic loaded data (textures, sounds, models...)
@@ -315,6 +324,7 @@ UpdateDrawFrame(void)
 {
 	UpdateGame(1, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
 	DrawGame(&GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
+    DrawHud(&GlobalScreen);
 }
 
 // Updates the player's position based on the keyboard input
