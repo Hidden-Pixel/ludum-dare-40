@@ -37,6 +37,9 @@ global_variable Camera2D GlobalCamera;
 global_variable EntityCollection GlobalEntities;
 global_variable ItemCollection GlobalItems;
 
+global_variable int score = 0;
+global_variable int high_score = 0;
+
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
@@ -134,6 +137,7 @@ internal void
 ResetGame() {
 	InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
 	paused = true;
+	score = 0;
 }
 
 internal void
@@ -238,6 +242,11 @@ AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
 		i = max(min(LEVEL_SIZE - 1, i), 0);
 		j = max(min(LEVEL_SIZE - 1, j), 0);
 		if (gameMap->map[i][j] == 0) {
+			continue;
+		}
+		float dx = gameEntities->list[0].position.x - i * 40;
+		float dy = gameEntities->list[0].position.y - j * 40;
+		if (dx *dx + dy * dy < 100) {
 			continue;
 		}
 		Vector2 pos = GetTileCenter(gameMap, i, j);
@@ -374,7 +383,9 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameI
 internal void
 DrawHud()
 {
-    DrawText(FormatText("Health: %03i", 100), 20, 20, 20, RED);
+    DrawText(FormatText("High Score: %03i", high_score), 20, 20, 20, RED);
+    DrawText(FormatText("Score: %03i", score), 20, 40, 20, RED);
+    DrawText(FormatText("Health: %03i", 100), 20, 60, 20, RED);
 }
 
 internal void
@@ -456,7 +467,7 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
 {
     Vector2 tileDifference = Vector2Subtract(gamePlayer.position, gameEnemy->position);
 	float dist = Vector2Length(tileDifference);
-    if (dist > 0.01 && dist/gameMap->tileWidth <= gameEnemy->sightDistance)
+    if (dist > 0.01 && dist/gameMap->tileWidth <= gameEnemy->sightDistance + (score / 3))
     {
 		Vector2Scale(&tileDifference, gameEnemy->maxVelocity/dist);
 		gameEnemy->position = Vector2Add(gameEnemy->position, tileDifference);
@@ -663,6 +674,8 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 				RemoveEntity(gameEntities, i);
 				if (rand() % ENEMY_HEALTH == 0) {
 					RemoveEntity(gameEntities, j);
+					score++;
+					high_score = max(score, high_score);
 					for (i = 0; i < 3; ++i)
 					{
 						AddRandomEntity((int) e2->position.x/40, (int) e2->position.y/40, gameEntities, gameMap);
@@ -673,6 +686,8 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 				RemoveEntity(gameEntities, j);
 				if (rand() % ENEMY_HEALTH == 0) {
 					RemoveEntity(gameEntities, i);
+					score++;
+					high_score = max(score, high_score);
 					for (i = 0; i < 3; ++i)
 					{
 						AddRandomEntity((int) e1->position.x/40, (int) e1->position.y/40, gameEntities, gameMap);
@@ -681,6 +696,7 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 			}
 
 			if ((e1->props.type == ENEMY && e2->props.type == PLAYER) || (e1->props.type == PLAYER && e2->props.type == ENEMY)) {
+				high_score = max(score, high_score);
 				ResetGame();
 				return;
 			}
