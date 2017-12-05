@@ -97,6 +97,9 @@ ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection 
 internal void
 AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap);
 
+internal void
+ResetGame();
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -128,8 +131,15 @@ int main(void)
 }
 
 internal void
+ResetGame() {
+	InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
+	paused = true;
+}
+
+internal void
 InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes)
 {
+	gameEntities->capacity = 0;
 	// camera setup
 	{
 		gameCamera->target.x   = 0.0f;
@@ -179,7 +189,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
         int i;
         for (i = 0; i < 10; ++i)
         {
-			AddRandomEntity(50, 65, gameEntities, gameMap);
+			AddRandomEntity(50, 50, gameEntities, gameMap);
         }
     }
 
@@ -210,9 +220,19 @@ internal void
 AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
 {
 	Entity skel;
+	int tries = 0;
 	do {
+		tries++;
 		int xo = rand() % 20 - 10;
 		int yo = rand() % 20 - 10;
+		if (xo > 0)
+			xo += 5;
+		if (yo > 0)
+			yo += 5;
+		if (xo <= 0)
+			xo -= 5;
+		if (yo <= 0)
+			yo -= 5;
 		int i = x + xo;
 		int j = y + yo;
 		i = max(min(LEVEL_SIZE - 1, i), 0);
@@ -237,7 +257,7 @@ AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
 		 .width = ENEMY_DEFAULT_SIZE
 		};
 		break;
-	} while (true);
+	} while (tries < 100);
 	AddEntity(gameEntities, skel);
 }
 
@@ -658,6 +678,11 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 						AddRandomEntity((int) e1->position.x/40, (int) e1->position.y/40, gameEntities, gameMap);
 					}
 				}
+			}
+
+			if ((e1->props.type == ENEMY && e2->props.type == PLAYER) || (e1->props.type == PLAYER && e2->props.type == ENEMY)) {
+				ResetGame();
+				return;
 			}
 			//definite collision
 			

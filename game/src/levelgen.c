@@ -59,7 +59,6 @@ GenerateLevel(int numIslands, int paths, int level[LEVEL_SIZE][LEVEL_SIZE]) {
 			islandMade = true;
 		} while (!islandMade);
 	}
-	
 	for (i = 0; i < paths; i++) {
 		bool pathMade = false;
 		do {
