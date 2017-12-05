@@ -63,18 +63,6 @@ typedef struct _entityCollection
     int capacity;
 } EntityCollection;
 
-internal void
-AddItemToEntity(Entity *gameEntity, Item *gameItem)
-{
-    switch (gameItem->type)
-    {
-        default:
-        {
-            InvalidCodePath;
-        } break;
-    }
-}
-
 internal int 
 AddEntity(EntityCollection *collection, Entity entity)
 {
@@ -168,6 +156,5 @@ HandleEntityActions(TileMap *gameMap, EntityCollection *collection, int entityIx
             return false;
     }
 }
-
 
 #endif

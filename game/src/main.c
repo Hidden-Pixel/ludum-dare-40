@@ -156,7 +156,8 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 			.maxVelocity = PLAYER_SPEED,
 			.props.type = PLAYER,
             .width = PLAYER_BASE_SIZE,
-            .height = PLAYER_BASE_SIZE
+            .height = PLAYER_BASE_SIZE,
+            .items = {0, 0, 0},
 		};
 		AddEntity(gameEntities, player);
 	}
@@ -529,9 +530,28 @@ ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection 
         else
         {
             // TODO(nick): pick up item
+            switch (gameItems->list[i].type)
+            {
+                case PICKUP:
+                {
+                    int i;
+                    for (i = 0; i < MAX_ITEM_SLOT; ++i)
+                    {
+                        if (gamePlayer->items[i].type == NOITEMTYPE)
+                        {
+                            gamePlayer->items[i] = gameItems->list[i];
+                            break;
+                        }
+                    }
+                } break;
+
+                case POWERUP:
+                {
+                    //TODO apply power up!
+                };
+            }
             RemoveItem(gameItems, i);
         }
-        // if item is close enough, check for pick up
     }
 }
 
