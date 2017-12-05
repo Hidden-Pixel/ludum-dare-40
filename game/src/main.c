@@ -113,7 +113,7 @@ int main(void)
 	// Initialization
     InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
     InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
-    paused = true;
+    paused = false;
 
 #if defined(PLATFORM_WEB)
     // TODO(nick): might need to change this to have parameters? look at documentation 
