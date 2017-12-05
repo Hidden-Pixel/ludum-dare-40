@@ -135,14 +135,11 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 		GenerateLevel(50, 100, gameMap->map);
 		gameMap->tileWidth = floor(gameScreen->width / 32.0);
 		gameMap->tileHeight = gameMap->tileWidth;
-		SetMapRect(gameMap, 1, 1, 5, 5, 1);
-		SetMapRect(gameMap, 1, 8, 6, 4, 1);
-		SetMapRect(gameMap, 3, 5, 1, 4, 3);
 	}
 
 	// player setup
 	{
-		Vector2 playerStart = GetTileCenter(gameMap, 1, 1);
+		Vector2 playerStart = GetTileCenter(gameMap, LEVEL_SIZE / 2, LEVEL_SIZE / 2);
 		Entity player = {
 			.position = {playerStart.x, playerStart.y},
 			.velocity = {0, 0},
@@ -160,7 +157,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
         // TODO(nick): figure out a way to spawn x amount of enemies near the player
         gameEntities->size = MAX_ENTITIES;
         int i;
-        for (i = 0; i < 0; ++i)
+        for (i = 0; i < 4; ++i)
         {
 			Entity skel = {
 				.position = {80, 80 + i * 40},
