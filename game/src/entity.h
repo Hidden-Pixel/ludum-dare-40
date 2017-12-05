@@ -54,6 +54,7 @@ typedef struct _entity
     int height;
     int width;
     Item items[MAX_ITEM_SLOT];
+    Texture2D texture;
 } Entity;
 
 typedef struct _entityCollection

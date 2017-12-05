@@ -170,6 +170,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
             .height = PLAYER_BASE_SIZE,
             .items = {0, 0, 0},
 		};
+        player.texture = LoadTexture("assets/hero/hero-walking/hero-stating.png");
 		AddEntity(gameEntities, player);
 	}
 
