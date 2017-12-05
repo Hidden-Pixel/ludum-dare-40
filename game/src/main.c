@@ -144,14 +144,11 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 		GenerateLevel(50, 100, gameMap->map);
 		gameMap->tileWidth = floor(gameScreen->width / 32.0);
 		gameMap->tileHeight = gameMap->tileWidth;
-		SetMapRect(gameMap, 1, 1, 5, 5, 1);
-		SetMapRect(gameMap, 1, 8, 6, 4, 1);
-		SetMapRect(gameMap, 3, 5, 1, 4, 3);
 	}
 
 	// player setup
 	{
-		Vector2 playerStart = GetTileCenter(gameMap, 1, 1);
+		Vector2 playerStart = GetTileCenter(gameMap, LEVEL_SIZE / 2, LEVEL_SIZE / 2);
 		Entity player = {
             .position = {playerStart.x, playerStart.y},
 			.velocity = {0, 0},
