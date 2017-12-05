@@ -94,6 +94,9 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities);
 internal void
 ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection *gameItems);
 
+internal void
+AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap);
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -174,24 +177,9 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     {
         gameEntities->size = MAX_ENTITIES;
         int i;
-        for (i = 0; i < 3; ++i)
+        for (i = 0; i < 10; ++i)
         {
-			Entity skel =
-            {
-				.position = {80, 80 + i * 40},
-				.velocity = {0, 0},
-				.color = PURPLE,
-				.maxVelocity = ENEMY_DEFAULT_SPEED,
-				.props.type = ENEMY,
-				.props.subType = SKELETON,
-				.props.attributes = NOENTITYATTRIBUTES,
-				.state = 0,
-				.sightDistance = 4.0f,
-				.counter = 0,
-				.height = ENEMY_DEFAULT_SIZE,
-				.width = ENEMY_DEFAULT_SIZE
-			};
-			AddEntity(gameEntities, skel);
+			AddRandomEntity(50, 65, gameEntities, gameMap);
         }
     }
 
@@ -216,6 +204,41 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
             AddItem(gameItems, item);
         }
     }
+}
+
+internal void
+AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
+{
+	Entity skel;
+	do {
+		int xo = rand() % 20 - 10;
+		int yo = rand() % 20 - 10;
+		int i = x + xo;
+		int j = y + yo;
+		i = max(min(LEVEL_SIZE - 1, i), 0);
+		j = max(min(LEVEL_SIZE - 1, j), 0);
+		if (gameMap->map[i][j] == 0) {
+			continue;
+		}
+		Vector2 pos = GetTileCenter(gameMap, i, j);
+
+		skel = (Entity){
+		 .position = pos,
+		 .velocity = {0, 0},
+		 .color = PURPLE,
+		 .maxVelocity = ENEMY_DEFAULT_SPEED,
+		 .props.type = ENEMY,
+		 .props.subType = SKELETON,
+		 .props.attributes = NOENTITYATTRIBUTES,
+		 .state = 0,
+		 .sightDistance = 8.0f,
+		 .counter = 0,
+		 .height = ENEMY_DEFAULT_SIZE,
+		 .width = ENEMY_DEFAULT_SIZE
+		};
+		break;
+	} while (true);
+	AddEntity(gameEntities, skel);
 }
 
 internal void
@@ -614,6 +637,27 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 			float dist = Vector2Length(diff);
 			if (dist >= rad) {
 				continue;
+			}
+
+			if (e1->props.type == WEAPON && e2->props.type == ENEMY) {
+				RemoveEntity(gameEntities, i);
+				if (rand() % ENEMY_HEALTH == 0) {
+					RemoveEntity(gameEntities, j);
+					for (i = 0; i < 3; ++i)
+					{
+						AddRandomEntity((int) e2->position.x/40, (int) e2->position.y/40, gameEntities, gameMap);
+					}
+				}
+			}
+			if (e1->props.type == ENEMY && e2->props.type == WEAPON) {
+				RemoveEntity(gameEntities, j);
+				if (rand() % ENEMY_HEALTH == 0) {
+					RemoveEntity(gameEntities, i);
+					for (i = 0; i < 3; ++i)
+					{
+						AddRandomEntity((int) e1->position.x/40, (int) e1->position.y/40, gameEntities, gameMap);
+					}
+				}
 			}
 			//definite collision
 			
