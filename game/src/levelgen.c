@@ -16,7 +16,7 @@ GenerateLevel(int numIslands, int paths, int level[LEVEL_SIZE][LEVEL_SIZE]) {
 		}
 	}
 
-	int islandProps[1000][10];
+	bool centerIsland = false;
 	int i;
 	for (i = 0; i < numIslands; i++) {
 		bool islandMade = false;
@@ -28,6 +28,11 @@ GenerateLevel(int numIslands, int paths, int level[LEVEL_SIZE][LEVEL_SIZE]) {
 			int maxY = LEVEL_SIZE - height - 1;
 			int pX = (rand() % maxX) + 1;
 			int pY = (rand() % maxY) + 1;
+			if (!centerIsland) {
+				pX = (LEVEL_SIZE - width) / 2;
+				pY = (LEVEL_SIZE - height) / 2;
+				centerIsland = true;
+			}
 			int x, y;
 			for (x = -1; x < width + 1; x++) {
 				for (y = -1; y < height + 1; y++) {
@@ -147,5 +152,95 @@ GenerateLevel(int numIslands, int paths, int level[LEVEL_SIZE][LEVEL_SIZE]) {
 			} while (!newLandFound);
 			pathMade = true;
 		} while (!pathMade);
+	}
+	
+	for (i = 0; i < 4; i++) {
+		int sX, sY;
+		sX = LEVEL_SIZE / 2;
+		sY = LEVEL_SIZE / 2;
+		int dir = i;
+		
+		if (level[sX][sY] == 0) {
+			continue;
+		}
+		//initial point is on land
+		bool newLandFound = false;
+		bool leftOldLand = false;
+		int iX = sX, iY = sY;
+		do {
+			switch (dir) {
+			case 0:
+				sX++;
+				break;
+			case 1:
+				sY++;
+				break;
+			case 2:
+				sX--;
+				break;
+			case 3:
+				sY--;
+				break;
+			}
+			if (sX < 0 || sX >= LEVEL_SIZE || sY < 0 || sY >= LEVEL_SIZE) {
+				break;
+			}
+			if (level[sX][sY] > 0) {
+				if (leftOldLand) {
+					newLandFound = true;
+				}
+			}
+			else
+			{
+				leftOldLand = true;
+				if (dir == 0 || dir == 2) {
+					if (level[sX][sY + 1] > 0 || level[sX][sY - 1] > 0) {
+						break;
+					}
+				}
+			if (dir == 1 || dir == 3) {
+					if (level[sX + 1][sY] > 0 || level[sX - 1][sY] > 0) {
+						break;
+					}
+				}
+			}
+		} while (!newLandFound);
+		if (!newLandFound) {
+			continue;
+		}
+		sX = iX;
+		sY = iY;
+		leftOldLand = false;
+		newLandFound = false;
+		//new land found make the path
+		do {
+			switch (dir) {
+			case 0:
+				sX++;
+				break;
+			case 1:
+				sY++;
+				break;
+			case 2:
+				sX--;
+				break;
+			case 3:
+				sY--;
+				break;
+			}
+			if (sX < 0 || sX >= LEVEL_SIZE || sY < 0 || sY >= LEVEL_SIZE) {
+				break;
+			}
+			if (level[sX][sY] > 0) {
+				if (leftOldLand) {
+					newLandFound = true;
+				}
+			}
+			else
+			{
+				level[sX][sY] = 3;
+				leftOldLand = true;
+			}
+		} while (!newLandFound);
 	}
 }

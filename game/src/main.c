@@ -3,12 +3,14 @@
  *  main.c
  *
  */
+
 #include "raylib.h"
 #include "raymath.h"
 #include <stdlib.h>
 #include <math.h>
 
 #include "main.h"
+#include "item.h"
 #include "entity.h"
 #include "collision.c"
 #include "levelgen.c"
@@ -33,21 +35,25 @@ global_variable TileTypes GlobalTileTypes;
 global_variable Camera2D GlobalCamera;
 
 global_variable EntityCollection GlobalEntities;
+global_variable ItemCollection GlobalItems;
 
 //------------------------------------------------------------------------------------
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *globalEntities, TileTypes *gameTileTypes);
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes);
 
 internal void
-UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
+UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera);
+
+internal void
+DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
 UpdateMenu(void);
 
 internal void
-DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
+DrawHud(Screen *gameScreen);
 
 internal void
 DrawMenu(Screen screen);
@@ -85,6 +91,9 @@ UpdateBulletPosition(float delta, Entity *bullet);
 internal void
 ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities);
 
+internal void
+ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection *gameItems);
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -94,7 +103,7 @@ int main(void)
 	GlobalScreen.height = 720;
 	// Initialization
     InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
-    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalTileTypes);
+    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
     paused = true;
 
 #if defined(PLATFORM_WEB)
@@ -116,7 +125,7 @@ int main(void)
 }
 
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, TileTypes *gameTileTypes)
+InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes)
 {
 	// camera setup
 	{
@@ -142,58 +151,79 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 		GenerateLevel(50, 100, gameMap->map);
 		gameMap->tileWidth = floor(gameScreen->width / 32.0);
 		gameMap->tileHeight = gameMap->tileWidth;
-		SetMapRect(gameMap, 1, 1, 5, 5, 1);
-		SetMapRect(gameMap, 1, 8, 6, 4, 1);
-		SetMapRect(gameMap, 3, 5, 1, 4, 3);
 	}
 
 	// player setup
 	{
-		Vector2 playerStart = GetTileCenter(gameMap, 1, 1);
-		Entity player = {
-			.position = {playerStart.x, playerStart.y},
+		Vector2 playerStart = GetTileCenter(gameMap, LEVEL_SIZE / 2, LEVEL_SIZE / 2);
+		Entity player =
+        {
+            .position = {playerStart.x, playerStart.y},
 			.velocity = {0, 0},
 			.color = WHITE,
 			.maxVelocity = PLAYER_SPEED,
 			.props.type = PLAYER,
             .width = PLAYER_BASE_SIZE,
-            .height = PLAYER_BASE_SIZE
+            .height = PLAYER_BASE_SIZE,
+            .items = {0, 0, 0},
 		};
 		AddEntity(gameEntities, player);
 	}
 
     // enemies setup
     {
-        // TODO(nick): figure out a way to spawn x amount of enemies near the player
         gameEntities->size = MAX_ENTITIES;
         int i;
-        for (i = 0; i < 0; ++i)
+        for (i = 0; i < 3; ++i)
         {
-			Entity skel = {
+			Entity skel =
+            {
 				.position = {80, 80 + i * 40},
 				.velocity = {0, 0},
 				.color = PURPLE,
 				.maxVelocity = ENEMY_DEFAULT_SPEED,
 				.props.type = ENEMY,
 				.props.subType = SKELETON,
-				.props.attributes = NOATTRIBUTES,
+				.props.attributes = NOENTITYATTRIBUTES,
 				.state = 0,
 				.sightDistance = 4.0f,
 				.counter = 0,
 				.height = ENEMY_DEFAULT_SIZE,
 				.width = ENEMY_DEFAULT_SIZE
 			};
-
 			AddEntity(gameEntities, skel);
+        }
+    }
+
+    // items setup
+    {
+        int i;
+        gameItems->size = 32;
+        gameItems->capacity = 0;
+        for (i = 0; i < 5; ++i)
+        {
+            // TODO(nick): random item generation
+            Item item = 
+            {
+                .position = { 80, 80 + i * 40},
+                .color = YELLOW,
+                .height = 10,
+                .width = 10,
+                .rotation = 0.0f,
+                .type = PICKUP,
+                .subType = HEALTHPACK,
+            };
+            AddItem(gameItems, item);
         }
     }
 }
 
 internal void
-UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
+UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     UpdateEntitiesPosition(delta, gameMap, gameEntities, tileTypes, gameCamera);
 	ResolveEntityCollisions(gameMap, gameEntities);
+    ResolvePlayerItemCollision(gameMap, &gameEntities->list[PLAYER_INDEX], gameItems);
 }
 
 internal void
@@ -227,7 +257,7 @@ DrawMenu(Screen gameScreen)
 }
 
 internal void
-DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera)
+DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     BeginDrawing();
     Entity *gamePlayer = &gameEntities->list[PLAYER_INDEX];
@@ -263,18 +293,45 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes,
 		}
 
         // draw player
-		DrawRectangle(gamePlayer->position.x - gamePlayer->width / 2, gamePlayer->position.y - gamePlayer->height / 2, gamePlayer->width, gamePlayer->height, gamePlayer->color);
+		DrawRectangle(gamePlayer->position.x - gamePlayer->width / 2,
+                      gamePlayer->position.y - gamePlayer->height / 2,
+                      gamePlayer->width, gamePlayer->height,
+                      gamePlayer->color);
 
         // draw enemies
         int i;
         for (i = (PLAYER_INDEX + 1); i < gameEntities->capacity; ++i)
         {
-            DrawRectangle(gameEntities->list[i].position.x - gameEntities->list[i].width / 2, gameEntities->list[i].position.y - gameEntities->list[i].height / 2, gameEntities->list[i].width, gameEntities->list[i].height, gameEntities->list[i].color);
+            if (gameEntities->list[i].props.type != NOENTITYTYPE)
+            {
+                DrawRectangle(gameEntities->list[i].position.x - gameEntities->list[i].width / 2,
+                              gameEntities->list[i].position.y - gameEntities->list[i].height / 2,
+                              gameEntities->list[i].width, gameEntities->list[i].height,
+                              gameEntities->list[i].color);
+            }
+        }
+
+        // draw items
+        for (i = 0; i < gameItems->size; ++i)
+        {
+            if (gameItems->list[i].type != NOITEMTYPE) 
+            {
+                DrawRectangle(gameItems->list[i].position.x - gameItems->list[i].width / 2,
+                              gameItems->list[i].position.y - gameItems->list[i].height / 2,
+                              gameItems->list[i].width, gameItems->list[i].height,
+                              gameItems->list[i].color);
+            }
         }
 	}
 
 	End2dMode();
 	EndDrawing();
+}
+
+internal void
+DrawHud(Screen *gameScreen)
+{
+    DrawText(FormatText("Health: %03i", 100), 20, 20, 20, RED);
 }
 
 internal void
@@ -295,8 +352,9 @@ UpdateDrawFrame(void)
     }
     else
     {
-        UpdateGame(1, &GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
-        DrawGame(&GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
+        UpdateGame(1, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
+	    DrawGame(&GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
+        DrawHud(&GlobalScreen);
     }
 }
 
@@ -361,46 +419,49 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
 		Vector2Scale(&tileDifference, gameEnemy->maxVelocity/dist);
 		gameEnemy->position = Vector2Add(gameEnemy->position, tileDifference);
 	}
-	else {
+	else
+    {
 		float x = 0, y = 0;
 		Vector2i blk;
-		switch (gameEnemy->state) {
-		case 0:
-			x = gameEnemy->maxVelocity / 2;
-			blk = GetTileAtLocation(gameMap, gameEnemy->position);
-			if (GlobalTileTypes.tiles[gameMap->map[blk.x + 1][blk.y]].wall) {
-				gameEnemy->state = (rand() % 2) * 2 + 1;
-				gameEnemy->counter = 0;
-			}
-			break;
-		case 1:
-			y = gameEnemy->maxVelocity / 2;
-			blk = GetTileAtLocation(gameMap, gameEnemy->position);
-			if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y + 1]].wall) {
-				gameEnemy->state = (rand() % 2) * 2;
-				gameEnemy->counter = 0;
-			}
-			break;
-		case 2:
-			x = -gameEnemy->maxVelocity / 2;
-			blk = GetTileAtLocation(gameMap, gameEnemy->position);
-			if (GlobalTileTypes.tiles[gameMap->map[blk.x - 1][blk.y]].wall) {
-				gameEnemy->state = (rand() % 2) * 2 + 1;
-				gameEnemy->counter = 0;
-			}
-			break;
-		case 3:
-			y = -gameEnemy->maxVelocity / 2;
-			blk = GetTileAtLocation(gameMap, gameEnemy->position);
-			if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y - 1]].wall) {
-				gameEnemy->state = (rand() % 2) * 2;
-				gameEnemy->counter = 0;
-			}
-			break;
+		switch (gameEnemy->state)
+        {
+            case 0:
+                x = gameEnemy->maxVelocity / 2;
+                blk = GetTileAtLocation(gameMap, gameEnemy->position);
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x + 1][blk.y]].wall) {
+                    gameEnemy->state = (rand() % 2) * 2 + 1;
+                    gameEnemy->counter = 0;
+                }
+                break;
+            case 1:
+                y = gameEnemy->maxVelocity / 2;
+                blk = GetTileAtLocation(gameMap, gameEnemy->position);
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y + 1]].wall) {
+                    gameEnemy->state = (rand() % 2) * 2;
+                    gameEnemy->counter = 0;
+                }
+                break;
+            case 2:
+                x = -gameEnemy->maxVelocity / 2;
+                blk = GetTileAtLocation(gameMap, gameEnemy->position);
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x - 1][blk.y]].wall) {
+                    gameEnemy->state = (rand() % 2) * 2 + 1;
+                    gameEnemy->counter = 0;
+                }
+                break;
+            case 3:
+                y = -gameEnemy->maxVelocity / 2;
+                blk = GetTileAtLocation(gameMap, gameEnemy->position);
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y - 1]].wall) {
+                    gameEnemy->state = (rand() % 2) * 2;
+                    gameEnemy->counter = 0;
+                }
+                break;
 		}
 		gameEnemy->position = Vector2Add(gameEnemy->position, (Vector2) { x, y });
 		gameEnemy->counter++;
-		if (gameEnemy->counter >= 10 && rand() % 200 == 44) {
+		if (gameEnemy->counter >= 10 && rand() % 200 == 44)
+        {
 			gameEnemy->counter = 0;
 			gameEnemy->state = rand() % 6;
 		}
@@ -464,7 +525,8 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
 				validEntity = false;
             } break;
         }
-		if (validEntity) {
+		if (validEntity)
+        {
 			bool collisionWithTile = HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
 			bool removed = HandleEntityActions(gameMap, gameEntities, i, collisionWithTile);
 			// if the entity died, removed, etc reprocess the current index
@@ -483,6 +545,57 @@ UpdateBulletPosition(float delta, Entity *bullet)
 	bullet->position = Vector2Add(bullet->position, frameVel);
 }
 
+internal void
+ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection *gameItems)
+{
+    Vector2 diff = Vector2Zero();
+    float dist = 0.0f;
+    float rad = 0.0f;
+    int i;
+    for (i = 0; i < gameItems->capacity; ++i)
+    {
+        // TODO(nick): wrap this up to a function? and use in both as well
+        // check if player is close to item
+        rad = (gamePlayer->width + gameItems->list[i].width) / 2.0f;
+        diff = Vector2Subtract(gamePlayer->position, gameItems->list[i].position);
+        if (abs(diff.x) > rad || abs(diff.y) > rad)
+        {
+            continue;
+        }
+
+	    dist = Vector2Length(diff);
+        if (dist > rad)
+        {
+            continue;
+        }
+        else
+        {
+            // TODO(nick): pick up item
+            switch (gameItems->list[i].type)
+            {
+                case PICKUP:
+                {
+                    int i;
+                    for (i = 0; i < MAX_ITEM_SLOT; ++i)
+                    {
+                        if (gamePlayer->items[i].type == NOITEMTYPE)
+                        {
+                            gamePlayer->items[i] = gameItems->list[i];
+                            break;
+                        }
+                    }
+                } break;
+
+                case POWERUP:
+                {
+                    //TODO apply power up!
+                };
+            }
+            RemoveItem(gameItems, i);
+        }
+    }
+}
+
 internal void 
 ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 {
@@ -493,7 +606,8 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 			float rad = (e1->width + e2->width) / 2.0;
 			Vector2 diff = Vector2Subtract(e1->position, e2->position);
 			//fast check before distance formula
-			if (abs(diff.x) > rad || abs(diff.y) > rad) {
+			if (abs(diff.x) > rad || abs(diff.y) > rad)
+            {
 				continue;
 			}
 			//possible collision
