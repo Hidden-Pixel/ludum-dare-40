@@ -24,7 +24,7 @@
 global_variable char *windowTitle = "ludum dare 40";
 
 global_variable bool gameOver;
-global_variable bool pause;
+global_variable bool paused;
 global_variable bool victory;
 
 global_variable Screen GlobalScreen;
@@ -44,7 +44,13 @@ internal void
 UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
+UpdateMenu(void);
+
+internal void
 DrawGame(TileMap *gameMap, EntityCollection *gameEntities, TileTypes *tileTypes, Camera2D *gameCamera);
+
+internal void
+DrawMenu(Screen screen);
 
 internal void
 UnloadGame(void);
@@ -89,6 +95,7 @@ int main(void)
 	// Initialization
     InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
     InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalTileTypes);
+    paused = true;
 
 #if defined(PLATFORM_WEB)
     // TODO(nick): might need to change this to have parameters? look at documentation 
@@ -97,7 +104,7 @@ int main(void)
     SetTargetFPS(60);
 	while (!WindowShouldClose())
 	{
-		UpdateDrawFrame(&GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
+		UpdateDrawFrame();
 	}
 #endif
 
@@ -149,8 +156,8 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 			.color = WHITE,
 			.maxVelocity = PLAYER_SPEED,
 			.props.type = PLAYER,
-      .width = PLAYER_BASE_SIZE,
-      .height = PLAYER_BASE_SIZE
+            .width = PLAYER_BASE_SIZE,
+            .height = PLAYER_BASE_SIZE
 		};
 		AddEntity(gameEntities, player);
 	}
@@ -190,6 +197,15 @@ UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, TileTy
 }
 
 internal void
+UpdateMenu(void)
+{
+    if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER))
+    {
+        paused = false;
+    }
+}
+
+internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 {
 	int a;
@@ -199,6 +215,15 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 			gameMap->map[a][b] = type;
 		}
 	}
+}
+
+internal void
+DrawMenu(Screen gameScreen)
+{
+    BeginDrawing();
+	    ClearBackground(RAYWHITE);
+        DrawText("PRESS SPACE OR ENTER TO START THE GAME!", 450, 300, 20, LIGHTGRAY);
+    EndDrawing();
 }
 
 internal void
@@ -260,12 +285,19 @@ UnloadGame(void)
 }
 
 // Update and Draw (one frame)
-//
 internal void
 UpdateDrawFrame(void)
 {
-	UpdateGame(1, &GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
-	DrawGame(&GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
+    if (paused) 
+    {
+        DrawMenu(GlobalScreen);
+        UpdateMenu();
+    }
+    else
+    {
+        UpdateGame(1, &GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
+        DrawGame(&GlobalMap, &GlobalEntities, &GlobalTileTypes, &GlobalCamera);
+    }
 }
 
 // Updates the player's position based on the keyboard input
