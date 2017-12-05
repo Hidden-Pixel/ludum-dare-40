@@ -26,7 +26,7 @@
 global_variable char *windowTitle = "ludum dare 40";
 
 global_variable bool gameOver;
-global_variable bool pause;
+global_variable bool paused;
 global_variable bool victory;
 
 global_variable Screen GlobalScreen;
@@ -50,7 +50,13 @@ internal void
 DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera);
 
 internal void
-DrawHud(Screen *gameScreen);
+UpdateMenu(void);
+
+internal void
+DrawHud();
+
+internal void
+DrawMenu(Screen screen);
 
 internal void
 UnloadGame(void);
@@ -98,6 +104,7 @@ int main(void)
 	// Initialization
     InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
     InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
+    paused = true;
 
 #if defined(PLATFORM_WEB)
     // TODO(nick): might need to change this to have parameters? look at documentation 
@@ -149,7 +156,8 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 	// player setup
 	{
 		Vector2 playerStart = GetTileCenter(gameMap, LEVEL_SIZE / 2, LEVEL_SIZE / 2);
-		Entity player = {
+		Entity player =
+        {
             .position = {playerStart.x, playerStart.y},
 			.velocity = {0, 0},
 			.color = WHITE,
@@ -219,6 +227,15 @@ UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, ItemCo
 }
 
 internal void
+UpdateMenu(void)
+{
+    if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER))
+    {
+        paused = false;
+    }
+}
+
+internal void
 SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 {
 	int a;
@@ -228,6 +245,15 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 			gameMap->map[a][b] = type;
 		}
 	}
+}
+
+internal void
+DrawMenu(Screen gameScreen)
+{
+    BeginDrawing();
+	    ClearBackground(RAYWHITE);
+        DrawText("PRESS SPACE OR ENTER TO START THE GAME!", 450, 300, 20, LIGHTGRAY);
+    EndDrawing();
 }
 
 internal void
@@ -297,13 +323,13 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameI
             }
         }
 	}
-
 	End2dMode();
+    DrawHud();
 	EndDrawing();
 }
 
 internal void
-DrawHud(Screen *gameScreen)
+DrawHud()
 {
     DrawText(FormatText("Health: %03i", 100), 20, 20, 20, RED);
 }
@@ -319,9 +345,16 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(void)
 {
-	UpdateGame(1, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
-	DrawGame(&GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
-    DrawHud(&GlobalScreen);
+    if (paused) 
+    {
+        DrawMenu(GlobalScreen);
+        UpdateMenu();
+    }
+    else
+    {
+        UpdateGame(1, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
+	    DrawGame(&GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
+    }
 }
 
 // Updates the player's position based on the keyboard input
