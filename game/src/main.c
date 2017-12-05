@@ -281,7 +281,7 @@ UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, ItemCo
 internal void
 UpdateMenu(void)
 {
-    if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER))
+    if (IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_ENTER))
     {
         paused = false;
     }
