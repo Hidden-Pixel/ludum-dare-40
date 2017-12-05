@@ -53,7 +53,7 @@ internal void
 UpdateMenu(void);
 
 internal void
-DrawHud(Screen *gameScreen);
+DrawHud();
 
 internal void
 DrawMenu(Screen screen);
@@ -323,13 +323,13 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameI
             }
         }
 	}
-
 	End2dMode();
+    DrawHud();
 	EndDrawing();
 }
 
 internal void
-DrawHud(Screen *gameScreen)
+DrawHud()
 {
     DrawText(FormatText("Health: %03i", 100), 20, 20, 20, RED);
 }
@@ -354,7 +354,6 @@ UpdateDrawFrame(void)
     {
         UpdateGame(1, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
 	    DrawGame(&GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
-        DrawHud(&GlobalScreen);
     }
 }
 
