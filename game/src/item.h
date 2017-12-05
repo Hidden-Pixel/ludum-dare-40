@@ -32,8 +32,8 @@ typedef struct _item
     int height;
     int width;
     float rotation; // NOTE(nick): item spinning / shrinking?
-    unsigned char type;
-    unsigned char subType;
+    ItemType type;
+    ItemSubType subType;
 } Item;
 
 typedef struct _itemCollection
@@ -58,9 +58,11 @@ AddItem(ItemCollection *collection, Item item)
 internal void
 RemoveItem(ItemCollection *collection, int itemIndex)
 {
-    collection->list[itemIndex] = collection->list[itemIndex];
-    collection->list[itemIndex].type = NOITEMSUBTYPE;
-    collection->list[itemIndex].subType = NOITEMSUBTYPE;
+    int i = collection->capacity - 1;
+    collection->list[itemIndex] = collection->list[i];
+    // TODO(nick): properly zero out
+    collection->list[i].type = NOITEMSUBTYPE;
+    collection->list[i].subType = NOITEMSUBTYPE;
     collection->capacity--;
 }
 

@@ -165,7 +165,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     {
         gameEntities->size = MAX_ENTITIES;
         int i;
-        for (i = 0; i < 2; ++i)
+        for (i = 0; i < 0; ++i)
         {
 			Entity skel =
             {
@@ -190,12 +190,13 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     {
         int i;
         gameItems->size = 32;
-        for (i = 0; i < 5; ++i)
+        gameItems->capacity = 0;
+        for (i = 0; i < 2; ++i)
         {
             // TODO(nick): random item generation
             Item item = 
             {
-                .position = { 100, 80 + i * 40},
+                .position = { 80, 80 + i * 40},
                 .color = YELLOW,
                 .height = 10,
                 .width = 10,
@@ -265,25 +266,34 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameI
 		}
 
         // draw player
-		DrawRectangle(gamePlayer->position.x - gamePlayer->width / 2, gamePlayer->position.y - gamePlayer->height / 2, gamePlayer->width, gamePlayer->height, gamePlayer->color);
+		DrawRectangle(gamePlayer->position.x - gamePlayer->width / 2,
+                      gamePlayer->position.y - gamePlayer->height / 2,
+                      gamePlayer->width, gamePlayer->height,
+                      gamePlayer->color);
 
         // draw enemies
         int i;
         for (i = (PLAYER_INDEX + 1); i < gameEntities->size; ++i)
         {
-            DrawRectangle(gameEntities->list[i].position.x - gameEntities->list[i].width / 2,
-                          gameEntities->list[i].position.y - gameEntities->list[i].height / 2,
-                          gameEntities->list[i].width, gameEntities->list[i].height,
-                          gameEntities->list[i].color);
+            if (gameEntities->list[i].props.type != NOENTITYTYPE)
+            {
+                DrawRectangle(gameEntities->list[i].position.x - gameEntities->list[i].width / 2,
+                              gameEntities->list[i].position.y - gameEntities->list[i].height / 2,
+                              gameEntities->list[i].width, gameEntities->list[i].height,
+                              gameEntities->list[i].color);
+            }
         }
 
         // draw items
-        for (i = 0; i < gameItems->capacity; ++i)
+        for (i = 0; i < gameItems->size; ++i)
         {
-            DrawRectangle(gameItems->list[i].position.x - gameItems->list[i].width / 2,
-                          gameItems->list[i].position.y - gameItems->list[i].height / 2,
-                          gameItems->list[i].width, gameEntities->list[i].height,
-                          gameItems->list[i].color);
+            if (gameItems->list[i].type != NOITEMTYPE) 
+            {
+                DrawRectangle(gameItems->list[i].position.x - gameItems->list[i].width / 2,
+                              gameItems->list[i].position.y - gameItems->list[i].height / 2,
+                              gameItems->list[i].width, gameItems->list[i].height,
+                              gameItems->list[i].color);
+            }
         }
 	}
 
@@ -519,7 +529,6 @@ ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection 
         else
         {
             // TODO(nick): pick up item
-            //NotImplemented;
             RemoveItem(gameItems, i);
         }
         // if item is close enough, check for pick up
