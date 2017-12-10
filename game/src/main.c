@@ -1,13 +1,13 @@
 /*
- *	ludum dare 40
- *  main.c
+ *	main.c
  *
  */
 
-#include "raylib.h"
-#include "raymath.h"
 #include <stdlib.h>
 #include <math.h>
+
+#include "raylib.h"
+#include "raymath.h"
 
 #include "main.h"
 #include "item.h"
@@ -56,7 +56,7 @@ internal void
 UpdateMenu(void);
 
 internal void
-DrawHud();
+DrawHud(Entity gamePlayer);
 
 internal void
 DrawMenu(Screen screen);
@@ -127,14 +127,15 @@ int main(void)
 #endif
 
     // De-Initialization
-    UnloadGame();
+    //UnloadGame();
     CloseWindow();
 
     return 0;
 }
 
 internal void
-ResetGame() {
+ResetGame()
+{
 	InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
 	paused = true;
 	score = 0;
@@ -182,6 +183,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 			.props.type = PLAYER,
             .width = PLAYER_BASE_SIZE,
             .height = PLAYER_BASE_SIZE,
+            .health = PLAYER_BASE_HEALTH,
             .items = {0, 0, 0},
 		};
 		AddEntity(gameEntities, player);
@@ -223,7 +225,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 internal void
 AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
 {
-	Entity skel;
+	Entity enemy;
 	int tries = 0;
 	do {
 		tries++;
@@ -250,24 +252,25 @@ AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
 			continue;
 		}
 		Vector2 pos = GetTileCenter(gameMap, i, j);
-
-		skel = (Entity){
-		 .position = pos,
-		 .velocity = {0, 0},
-		 .color = PURPLE,
-		 .maxVelocity = ENEMY_DEFAULT_SPEED,
-		 .props.type = ENEMY,
-		 .props.subType = SKELETON,
-		 .props.attributes = NOENTITYATTRIBUTES,
-		 .state = 0,
-		 .sightDistance = 8.0f,
-		 .counter = 0,
-		 .height = ENEMY_DEFAULT_SIZE,
-		 .width = ENEMY_DEFAULT_SIZE
+		enemy = (Entity)
+        {
+            .position = pos,
+		    .velocity = {0, 0},
+		    .color = PURPLE,
+            .maxVelocity = ENEMY_DEFAULT_SPEED,
+            .props.type = ENEMY,
+            .props.subType = SKELETON,
+            .props.attributes = NOENTITYATTRIBUTES,
+            .state = 0,
+            .sightDistance = 8.0f,
+            .counter = 0,
+            .height = ENEMY_DEFAULT_SIZE,
+            .width = ENEMY_DEFAULT_SIZE,
+            .health = ENEMY_BASE_HEALTH,
 		};
 		break;
 	} while (tries < 100);
-	AddEntity(gameEntities, skel);
+	AddEntity(gameEntities, enemy);
 }
 
 internal void
@@ -292,10 +295,12 @@ SetMapRect(TileMap *gameMap, int x, int y, int w, int h, int type)
 {
 	int a;
 	int b;
-	for (a = x; a < x+w; a++) {
-		for (b = y; b < y+h; b++) {
-			gameMap->map[a][b] = type;
-		}
+	for (a = x; a < x+w; a++)
+    {
+        for (b = y; b < y+h; b++)
+        {
+            gameMap->map[a][b] = type;
+        }
 	}
 }
 
@@ -376,23 +381,23 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameI
         }
 	}
 	End2dMode();
-    DrawHud();
+    DrawHud(gameEntities->list[PLAYER_INDEX]);
 	EndDrawing();
 }
 
 internal void
-DrawHud()
+DrawHud(Entity gamePlayer)
 {
     DrawText(FormatText("High Score: %03i", high_score), 20, 20, 20, RED);
     DrawText(FormatText("Score: %03i", score), 20, 40, 20, RED);
-    DrawText(FormatText("Health: %03i", 100), 20, 60, 20, RED);
+    DrawText(FormatText("Health: %03i", gamePlayer.health), 20, 60, 20, RED);
 }
 
 internal void
 UnloadGame(void)
 {
     // TODO: Unload all dynamic loaded data (textures, sounds, models...)
-	//NotImplemented;
+	NotImplemented;
 }
 
 // Update and Draw (one frame)
@@ -557,21 +562,15 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
 
             case ENEMY:
             {
-                UpdateEnemyPosition(delta, gameEntities->list[PLAYER_INDEX], &gameEntities->list[i], gameMap);
+                if (gameEntities->list[i].props.subType == BULLET)
+                {
+                    UpdateBulletPosition(delta, &gameEntities->list[i]);
+                }
+                else
+                {
+                    UpdateEnemyPosition(delta, gameEntities->list[PLAYER_INDEX], &gameEntities->list[i], gameMap);
+                }
             } break;
-
-			case WEAPON:
-			{
-				switch(gameEntities->list[i].props.subType)
-				{
-					case BULLET:
-						UpdateBulletPosition(delta, &gameEntities->list[i]);
-						break;
-					default:
-						validEntity = false;
-						break;
-				}
-			} break;
 
             default:
             {
@@ -583,7 +582,8 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
 			bool collisionWithTile = HandleTileCollisions(gameMap, &gameEntities->list[i], tileTypes);
 			bool removed = HandleEntityActions(gameMap, gameEntities, i, collisionWithTile);
 			// if the entity died, removed, etc reprocess the current index
-			if (removed) {
+			if (removed)
+            {
 				i--;
 			}
 		}
@@ -658,19 +658,28 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 			Entity *e2 = &gameEntities->list[j];
 			float rad = (e1->width + e2->width) / 2.0;
 			Vector2 diff = Vector2Subtract(e1->position, e2->position);
-			//fast check before distance formula
+			// fast check before distance formula
 			if (abs(diff.x) > rad || abs(diff.y) > rad)
             {
 				continue;
 			}
-			//possible collision
+			// possible collision
 			
 			float dist = Vector2Length(diff);
-			if (dist >= rad) {
+			if (dist >= rad)
+            {
 				continue;
 			}
 
-			if (e1->props.type == WEAPON && e2->props.type == ENEMY) {
+            // weapon to enemy collision or enemy to weapon collision
+            if (((e1->props.type == ENEMY && e1->props.subType == BULLET) && e2->props.type == ENEMY && e2->props.subType != BULLET) ||
+                ((e2->props.type == ENEMY && e2->props.subType == BULLET) && e1->props.type == ENEMY && e1->props.subType != BULLET))
+            {
+                Entity *enemy = e1;
+                if (e2->props.type == ENEMY)
+                {
+                    enemy = e2;
+                }
 				RemoveEntity(gameEntities, i);
 				if (rand() % ENEMY_HEALTH == 0) {
 					RemoveEntity(gameEntities, j);
@@ -678,26 +687,27 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 					high_score = max(score, high_score);
 					for (i = 0; i < 3; ++i)
 					{
-						AddRandomEntity((int) e2->position.x/40, (int) e2->position.y/40, gameEntities, gameMap);
+						AddRandomEntity((int)enemy->position.x/40, (int)enemy->position.y/40, gameEntities, gameMap);
 					}
 				}
-			}
-			if (e1->props.type == ENEMY && e2->props.type == WEAPON) {
-				RemoveEntity(gameEntities, j);
-				if (rand() % ENEMY_HEALTH == 0) {
-					RemoveEntity(gameEntities, i);
-					score++;
-					high_score = max(score, high_score);
-					for (i = 0; i < 3; ++i)
-					{
-						AddRandomEntity((int) e1->position.x/40, (int) e1->position.y/40, gameEntities, gameMap);
-					}
-				}
-			}
+            }
 
-			if ((e1->props.type == ENEMY && e2->props.type == PLAYER) || (e1->props.type == PLAYER && e2->props.type == ENEMY)) {
+			if ((e1->props.type == ENEMY && e2->props.type == PLAYER) || (e1->props.type == PLAYER && e2->props.type == ENEMY))
+            {
 				high_score = max(score, high_score);
-				ResetGame();
+                Entity *player = e1;
+                if (e2->props.type == PLAYER)
+                {
+                    player = e2;
+                }
+                if (player->health > 0)
+                {
+                    player->health--;
+                }
+                else
+                {
+				    ResetGame();
+                }
 				return;
 			}
 			//definite collision
@@ -761,6 +771,5 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			}
 		}
 	}
-
 	return collided;
 }

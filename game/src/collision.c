@@ -3,9 +3,6 @@
  *
  */
 
-#include "main.h"
-#include "raymath.h"
-
 // Output vector 3 details the move r2 has to make to no longer collide with r1.  The z of the vector 3 will be true (positive int) if it has collided, false (0) if it has not.
 internal Vector3
 RectCollision3(Vector2 r1tl, Vector2 r1br, Vector2 r2tl, Vector2 r2br)
@@ -55,3 +52,4 @@ RectCollisionMove(Vector2 r1tl, Vector2 r1br, Vector2 r2tl, Vector2 r2br)
 	Vector3 move = RectCollision3(r1tl, r1br, r2tl, r2br);
 	return (Vector2){move.x, move.y};
 }
+
