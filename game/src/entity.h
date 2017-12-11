@@ -63,6 +63,40 @@ typedef struct _entityCollection
     int capacity;
 } EntityCollection;
 
+internal Entity
+EntityZeroed()
+{
+    Entity result =
+    {
+        .position = { 0, 0, },
+        .velocity = { 0, 0, },
+        .color = 0,
+        .rotation = 0.0f,
+        .maxVelocity = 0.0f,
+        .props.type = NOENTITYTYPE,
+        .props.subType = NOENTITYSUBTYPE,
+        .props.attributes = NOENTITYATTRIBUTES,
+        .state = 0,
+        .sightDistance = 0.0f,
+        .counter = 0,
+        .height = 0,
+        .width = 0,
+        .health = 0,
+        .items = { 0, 0, 0, },
+    };
+    return result;
+}
+
+internal void
+InitEntityCollection(EntityCollection *collection)
+{
+    int i;
+    for (i = 0; i < MAX_ENTITIES; ++i)
+    {
+        collection->list[i] = EntityZeroed();
+    }
+}
+
 internal int 
 AddEntity(EntityCollection *collection, Entity entity)
 {
@@ -74,14 +108,22 @@ AddEntity(EntityCollection *collection, Entity entity)
 	return collection->capacity-1;
 }
 
+// TODO(nick): create zero out function 
 internal void
-RemoveEntity(EntityCollection *collection, int entityIx)
+RemoveEntity(EntityCollection *collection, int entityId)
 {
-	collection->list[entityIx] = collection->list[collection->capacity-1];
-	collection->list[collection->capacity-1].props.type = NOENTITYTYPE;
-	collection->list[collection->capacity-1].props.subType = NOENTITYSUBTYPE;
-	collection->list[collection->capacity-1].props.attributes = NOENTITYATTRIBUTES;
+	collection->list[entityId] = collection->list[collection->capacity-1];
+    collection->list[collection->capacity-1] = EntityZeroed();
 	collection->capacity--;
+}
+
+internal void
+RemoveAllEntities(EntityCollection *collection)
+{
+    while (collection->capacity >= 0)
+    {
+        RemoveEntity(collection, collection->capacity - 1);
+    }
 }
 
 internal Entity

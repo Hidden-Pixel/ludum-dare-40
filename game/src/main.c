@@ -144,7 +144,12 @@ ResetGame()
 internal void
 InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes)
 {
-	gameEntities->capacity = 0;
+    // collection setup
+    {
+        InitEntityCollection(gameEntities);
+	    gameEntities->capacity = 0;
+    }
+
 	// camera setup
 	{
 		gameCamera->target.x   = 0.0f;
@@ -671,18 +676,26 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 				continue;
 			}
 
+            // TODO(nick): could probably clean this up a bit with nested ifs instead of a bunch of &&'s
             // weapon to enemy collision or enemy to weapon collision
-            if (((e1->props.type == ENEMY && e1->props.subType == BULLET) && e2->props.type == ENEMY && e2->props.subType != BULLET) ||
-                ((e2->props.type == ENEMY && e2->props.subType == BULLET) && e1->props.type == ENEMY && e1->props.subType != BULLET))
+            if (((e1->props.type == ENEMY && e1->props.subType == BULLET) && (e2->props.type == ENEMY && e2->props.subType != BULLET)) ||
+                ((e2->props.type == ENEMY && e2->props.subType == BULLET) && (e1->props.type == ENEMY && e1->props.subType != BULLET)))
             {
+                int bulletIndex = j;
+                int enemyIndex = i;
                 Entity *enemy = e1;
-                if (e2->props.type == ENEMY)
+                // TODO(nick): subtype check is probably the only thing needed here!
+                if (e2->props.type == ENEMY && e2->props.subType != BULLET)
                 {
                     enemy = e2;
+                    bulletIndex = i;
+                    enemyIndex = j;
                 }
-				RemoveEntity(gameEntities, i);
-				if (rand() % ENEMY_HEALTH == 0) {
-					RemoveEntity(gameEntities, j);
+            
+				RemoveEntity(gameEntities, bulletIndex);
+				if (rand() % ENEMY_HEALTH == 0)
+                {
+					RemoveEntity(gameEntities, enemyIndex);
 					score++;
 					high_score = max(score, high_score);
 					for (i = 0; i < 3; ++i)
