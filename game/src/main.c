@@ -20,6 +20,7 @@
     #include <emscripten/emscripten.h>
 #endif
 
+static int callCount = 0;
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
@@ -227,6 +228,8 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
     }
 }
 
+// TODO(nick): "random" positioning might be causing some issues with the
+// collision checking - some positiions are showing up as NAN
 internal void
 AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
 {
@@ -248,12 +251,14 @@ AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
 		int j = y + yo;
 		i = max(min(LEVEL_SIZE - 1, i), 0);
 		j = max(min(LEVEL_SIZE - 1, j), 0);
-		if (gameMap->map[i][j] == 0) {
+		if (gameMap->map[i][j] == 0)
+        {
 			continue;
 		}
 		float dx = gameEntities->list[0].position.x - i * 40;
 		float dy = gameEntities->list[0].position.y - j * 40;
-		if (dx *dx + dy * dy < 100) {
+		if (dx *dx + dy * dy < 100)
+        {
 			continue;
 		}
 		Vector2 pos = GetTileCenter(gameMap, i, j);
@@ -282,6 +287,7 @@ internal void
 UpdateGame(float delta, TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera)
 {
     UpdateEntitiesPosition(delta, gameMap, gameEntities, tileTypes, gameCamera);
+    // TODO(nick): this appears to be the NAN issue! something in here is causing invalid moves or changes?
 	ResolveEntityCollisions(gameMap, gameEntities);
     ResolvePlayerItemCollision(gameMap, &gameEntities->list[PLAYER_INDEX], gameItems);
 }
@@ -491,7 +497,8 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
             case 0:
                 x = gameEnemy->maxVelocity / 2;
                 blk = GetTileAtLocation(gameMap, gameEnemy->position);
-                if (GlobalTileTypes.tiles[gameMap->map[blk.x + 1][blk.y]].wall) {
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x + 1][blk.y]].wall)
+                {
                     gameEnemy->state = (rand() % 2) * 2 + 1;
                     gameEnemy->counter = 0;
                 }
@@ -499,7 +506,8 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
             case 1:
                 y = gameEnemy->maxVelocity / 2;
                 blk = GetTileAtLocation(gameMap, gameEnemy->position);
-                if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y + 1]].wall) {
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y + 1]].wall)
+                {
                     gameEnemy->state = (rand() % 2) * 2;
                     gameEnemy->counter = 0;
                 }
@@ -507,7 +515,8 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
             case 2:
                 x = -gameEnemy->maxVelocity / 2;
                 blk = GetTileAtLocation(gameMap, gameEnemy->position);
-                if (GlobalTileTypes.tiles[gameMap->map[blk.x - 1][blk.y]].wall) {
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x - 1][blk.y]].wall)
+                {
                     gameEnemy->state = (rand() % 2) * 2 + 1;
                     gameEnemy->counter = 0;
                 }
@@ -515,12 +524,17 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
             case 3:
                 y = -gameEnemy->maxVelocity / 2;
                 blk = GetTileAtLocation(gameMap, gameEnemy->position);
-                if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y - 1]].wall) {
+                if (GlobalTileTypes.tiles[gameMap->map[blk.x][blk.y - 1]].wall)
+                {
                     gameEnemy->state = (rand() % 2) * 2;
                     gameEnemy->counter = 0;
                 }
                 break;
 		}
+        if (isnan(x) || isnan(y))
+        {
+            InvalidCodePath;
+        }
 		gameEnemy->position = Vector2Add(gameEnemy->position, (Vector2) { x, y });
 		gameEnemy->counter++;
 		if (gameEnemy->counter >= 10 && rand() % 200 == 44)
@@ -573,7 +587,19 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
                 }
                 else
                 {
+                    if (isnan(gameEntities->list[i].position.x) || callCount >= 10)
+                    {
+                        printf("debugging ...\n");
+                        //InvalidCodePath;
+                    }
                     UpdateEnemyPosition(delta, gameEntities->list[PLAYER_INDEX], &gameEntities->list[i], gameMap);
+                    callCount++;
+                    // TODO(nick): this is here for figuring out the NAN issue with enemy positioning.
+                    if (isnan(gameEntities->list[i].position.x) || callCount >= 10)
+                    {
+                        printf("debugging ...\n");
+                        //InvalidCodePath;
+                    }
                 }
             } break;
 
@@ -654,6 +680,9 @@ ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection 
     }
 }
 
+// TODO(nick):
+// - this function is causing the NAN issue, debug!
+// - remove all the isnan() function calls and other debugging code!
 internal void 
 ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 {
@@ -705,7 +734,10 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 				}
             }
 
-			if ((e1->props.type == ENEMY && e2->props.type == PLAYER) || (e1->props.type == PLAYER && e2->props.type == ENEMY))
+            // NOTE(nick): bullets being spawned as entity enemies kind of messes up this check a bit!
+            // maybe rethink the bullets?
+			if (((e1->props.type == ENEMY && e1->props.subType != BULLET) && e2->props.type == PLAYER) ||
+                (e1->props.type == PLAYER && (e2->props.type == ENEMY && e2->props.subType != BULLET)))
             {
 				high_score = max(score, high_score);
                 Entity *player = e1;
@@ -747,10 +779,10 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 
 	// if the entity's velocity is positive in the x it's moving right so start testing tiles to the left
 	// if the entity's velocity is postive in the y it's moving down, so start testing tiles above it
-	int x = (entity->velocity.x > 0) ? ((int)currentTile.x)-1 : ((int)currentTile.x)+1;
-	int xDir = (entity->velocity.x > 0) ? 1 : -1;
-	int y = (entity->velocity.y > 0) ? ((int)currentTile.y)-1 : ((int)currentTile.y)+1;
-	int yDir = (entity->velocity.y > 0) ? 1 : -1;
+	int x = ((int)entity->velocity.x > 0) ? ((int)currentTile.x)-1 : ((int)currentTile.x)+1;
+	int xDir = ((int)entity->velocity.x > 0) ? 1 : -1;
+	int y = ((int)entity->velocity.y > 0) ? ((int)currentTile.y)-1 : ((int)currentTile.y)+1;
+	int yDir = ((int)entity->velocity.y > 0) ? 1 : -1;
 	bool collided = false;
 
 	// check all tiles around the entity
@@ -773,6 +805,11 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			{
 				collided = true;
 				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
+                // TODO(nick): debugging purposes!
+                if (isnan(entity->position.x))
+                {
+                    InvalidCodePath;
+                }
 				if (move.x != 0)
 				{
 					entity->velocity.x = 0;

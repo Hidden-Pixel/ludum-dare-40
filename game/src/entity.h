@@ -108,7 +108,6 @@ AddEntity(EntityCollection *collection, Entity entity)
 	return collection->capacity-1;
 }
 
-// TODO(nick): create zero out function 
 internal void
 RemoveEntity(EntityCollection *collection, int entityId)
 {
