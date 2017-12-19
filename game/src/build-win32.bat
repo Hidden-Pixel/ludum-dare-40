@@ -1,5 +1,3 @@
-call "D:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
-
 IF NOT EXIST ..\build MKDIR ..\build
 PUSHD ..\build
 IF NOT EXIST .\win32 MKDIR win32

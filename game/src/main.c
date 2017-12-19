@@ -233,7 +233,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
 internal void
 AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
 {
-	Entity enemy;
+	Entity enemy = EntityZeroed();
 	int tries = 0;
 	do {
 		tries++;
@@ -280,6 +280,17 @@ AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
 		};
 		break;
 	} while (tries < 100);
+    // NOTE(nick): check entity list to make sure that entity isn't in current position
+    int i;
+    for (i = 0; i < gameEntities->capacity; ++i)
+    {
+        if (gameEntities->list[i].position.x == enemy.position.x ||
+            gameEntities->list[i].position.y == enemy.position.y)
+        {
+            enemy.position.x += 10;
+            enemy.position.y += 10;
+        }
+    }
 	AddEntity(gameEntities, enemy);
 }
 
@@ -531,10 +542,6 @@ UpdateEnemyPosition(float delta, Entity gamePlayer, Entity *gameEnemy, TileMap *
                 }
                 break;
 		}
-        if (isnan(x) || isnan(y))
-        {
-            InvalidCodePath;
-        }
 		gameEnemy->position = Vector2Add(gameEnemy->position, (Vector2) { x, y });
 		gameEnemy->counter++;
 		if (gameEnemy->counter >= 10 && rand() % 200 == 44)
@@ -587,19 +594,7 @@ UpdateEntitiesPosition(float delta, TileMap *gameMap, EntityCollection *gameEnti
                 }
                 else
                 {
-                    if (isnan(gameEntities->list[i].position.x) || callCount >= 10)
-                    {
-                        printf("debugging ...\n");
-                        //InvalidCodePath;
-                    }
                     UpdateEnemyPosition(delta, gameEntities->list[PLAYER_INDEX], &gameEntities->list[i], gameMap);
-                    callCount++;
-                    // TODO(nick): this is here for figuring out the NAN issue with enemy positioning.
-                    if (isnan(gameEntities->list[i].position.x) || callCount >= 10)
-                    {
-                        printf("debugging ...\n");
-                        //InvalidCodePath;
-                    }
                 }
             } break;
 
@@ -683,15 +678,32 @@ ResolvePlayerItemCollision(TileMap *gameMap, Entity *gamePlayer, ItemCollection 
 // TODO(nick):
 // - this function is causing the NAN issue, debug!
 // - remove all the isnan() function calls and other debugging code!
+// NOTE(nick 12/18/2017):
+// - the issue is occuring from the V2 diff of { 0.0f, 0.0f }
+// - the float value dist is a result of the V2Length of diff
+// - the nan issue will occur on the V2Divide(&diff, dist), because it
+//   is 0.0f / 0.0f, which is NAN
+//
 internal void 
 ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 {
-	for (int i = 0; i < gameEntities->capacity - 1; i++) {
-		for (int j = i + 1; j < gameEntities->capacity; j++) {
-			Entity *e1 = &gameEntities->list[i];
+	for (int i = 0; i < gameEntities->capacity - 1; i++)
+    {
+		for (int j = i + 1; j < gameEntities->capacity; j++)
+        {
+            Entity *e1 = &gameEntities->list[i];
 			Entity *e2 = &gameEntities->list[j];
+            if (isnan(e1->position.x) || isnan(e2->position.x))
+            {
+                printf("NOTE(nick): bad call here.");
+            }
 			float rad = (e1->width + e2->width) / 2.0;
+            // TODO(nick): this might be the evil cause of the nan issue!
 			Vector2 diff = Vector2Subtract(e1->position, e2->position);
+            if (isnan(diff.x) || isnan(diff.y))
+            {
+                printf("NOTE(nick): evil stuff here.");
+            }
 			// fast check before distance formula
 			if (abs(diff.x) > rad || abs(diff.y) > rad)
             {
@@ -720,7 +732,6 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
                     bulletIndex = i;
                     enemyIndex = j;
                 }
-            
 				RemoveEntity(gameEntities, bulletIndex);
 				if (rand() % ENEMY_HEALTH == 0)
                 {
@@ -732,6 +743,10 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 						AddRandomEntity((int)enemy->position.x/40, (int)enemy->position.y/40, gameEntities, gameMap);
 					}
 				}
+                if (isnan(e1->position.x) || isnan(e2->position.x))
+                {
+                    printf("NOTE(nick): bad call here.");
+                }
             }
 
             // NOTE(nick): bullets being spawned as entity enemies kind of messes up this check a bit!
@@ -760,14 +775,33 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 			//how far to push back each entity
 			float pushBack = (rad - dist) / 2;
 
-			//normal vector pointing from e2 to e1
+            // TODO(nick): for debugging
+            Vector2 tempDiff = diff;
+			// normal vector pointing from e2 to e1
 			Vector2Divide(&diff, dist);
+            if (isnan(e1->position.x) || isnan(e2->position.x))
+            {
+                printf("NOTE(nick): bad call here.");
+            }
 
 			//push back vector pointing from e2 to e1
 			Vector2Scale(&diff, pushBack);
+            if (isnan(e1->position.x) || isnan(e2->position.x))
+            {
+                printf("NOTE(nick): bad call here.");
+            }
+
+            // NOTE(nick): for debugging
+            Vector2 temp1 = e1->position;
+            Vector2 temp2 = e2->position;
 
 			e1->position = Vector2Add(e1->position, diff);
 			e2->position = Vector2Subtract(e2->position, diff);
+
+            if (isnan(e1->position.x) || isnan(e2->position.x))
+            {
+                printf("NOTE(nick): bad call here.");
+            }
 		}
 	}
 }
@@ -805,11 +839,6 @@ HandleTileCollisions(TileMap *gameMap, Entity *entity, TileTypes *tileTypes)
 			{
 				collided = true;
 				entity->position = Vector2Add(entity->position, (Vector2){move.x,move.y});
-                // TODO(nick): debugging purposes!
-                if (isnan(entity->position.x))
-                {
-                    InvalidCodePath;
-                }
 				if (move.x != 0)
 				{
 					entity->velocity.x = 0;
