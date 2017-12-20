@@ -47,9 +47,9 @@ typedef struct _entity
     float maxVelocity;
     EntityProp props;
     Color color;
-	int state;
-	int counter;
-	float sightDistance;
+    int state;
+    int counter;
+    float sightDistance;
     int height;
     int width;
     int health;
