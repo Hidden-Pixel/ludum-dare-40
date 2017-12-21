@@ -291,3 +291,6 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 .DS_Store
+
+# CMake output
+cmake-build-debug/
