@@ -15,20 +15,18 @@
 #include "collision.c"
 #include "levelgen.c"
 #include "vector2i.h"
+#include "gamestate.h"
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
 #endif
 
-static int callCount = 0;
 //------------------------------------------------------------------------------------
 // Global Variables Declaration
 //------------------------------------------------------------------------------------
-global_variable char *windowTitle = "ludum dare 40";
+global_variable char *windowTitle = "Depth Crawler - Alpha";
 
-global_variable bool gameOver;
-global_variable bool paused;
-global_variable bool victory;
+global_variable GameState GlobalGameState;
 
 global_variable Screen GlobalScreen;
 global_variable TileMap GlobalMap;
@@ -45,7 +43,7 @@ global_variable int high_score = 0;
 // Module Functions Declaration (local)
 //------------------------------------------------------------------------------------
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes);
+InitGame(GameState *gameState, Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes);
 
 internal void
 UpdateGame(float detla, TileMap *gameMap, EntityCollection *gameEnemies, ItemCollection *gameItems, TileTypes *tileTypes, Camera2D *gameCamera);
@@ -102,7 +100,7 @@ internal void
 AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap);
 
 internal void
-ResetGame();
+ResetGame(GameState *gameState);
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -113,14 +111,13 @@ int main(void)
     GlobalScreen.height = 720;
     // Initialization
     InitWindow(GlobalScreen.width, GlobalScreen.height, windowTitle);
-    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
-    paused = false;
+    InitGame(&GlobalGameState, &GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
 
 #if defined(PLATFORM_WEB)
     // TODO(nick): might need to change this to have parameters? look at documentation 
     emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
 #else
-    SetTargetFPS(60);
+    SetTargetFPS(GlobalGameState.frameRateTarget);
     while (!WindowShouldClose())
     {
         UpdateDrawFrame();
@@ -135,16 +132,25 @@ int main(void)
 }
 
 internal void
-ResetGame()
+ResetGame(GameState *gameState)
 {
-    InitGame(&GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
-    paused = true;
+    InitGame(gameState, &GlobalScreen, &GlobalCamera, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes);
+    gameState->paused = true;
     score = 0;
 }
 
 internal void
-InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes)
+InitGame(GameState *gameState, Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityCollection *gameEntities, ItemCollection *gameItems, TileTypes *gameTileTypes)
 {
+    // game state setup
+    {
+        gameState->paused = false;
+        gameState->gameOver= false;
+        gameState->frameRateTarget = FRAME_RATE_TARGET;
+        gameState->frameCounter = 0;
+        gameState->gameTime = 0;
+    }
+
     // collection setup
     {
         InitEntityCollection(gameEntities);
@@ -189,6 +195,7 @@ InitGame(Screen *gameScreen, Camera2D *gameCamera, TileMap* gameMap, EntityColle
             .width = PLAYER_BASE_SIZE,
             .height = PLAYER_BASE_SIZE,
             .health = PLAYER_BASE_HEALTH,
+            .baseDamage = PLAYER_BASE_DAMAGE,
             .items = {0, 0, 0},
         };
         AddEntity(gameEntities, player);
@@ -276,6 +283,7 @@ AddRandomEntity(int x, int y, EntityCollection *gameEntities, TileMap *gameMap)
             .height = ENEMY_DEFAULT_SIZE,
             .width = ENEMY_DEFAULT_SIZE,
             .health = ENEMY_BASE_HEALTH,
+            .baseDamage = ENEMY_BASE_DAMAGE,
         };
         break;
     } while (tries < 100);
@@ -295,7 +303,8 @@ UpdateMenu(void)
 {
     if (IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_ENTER))
     {
-        paused = false;
+        // TODO(nick): pass as param
+        GlobalGameState.paused = false;
     }
 }
 
@@ -334,7 +343,7 @@ DrawGame(TileMap *gameMap, EntityCollection *gameEntities, ItemCollection *gameI
     ClearBackground(RAYWHITE);
     Begin2dMode(*gameCamera);
 
-    if (!gameOver)
+    if (!GlobalGameState.gameOver)
     {
         // draw tile map
         {
@@ -413,15 +422,18 @@ UnloadGame(void)
 internal void
 UpdateDrawFrame(void)
 {
-    if (paused) 
+    // TODO(nick): pass as param
+    if (GlobalGameState.paused) 
     {
         DrawMenu(GlobalScreen);
         UpdateMenu();
     }
     else
     {
-        UpdateGame(1, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
+        UpdateGame(1.0f, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
         DrawGame(&GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
+        GlobalGameState.frameCounter++;
+        printf("Frame time: %6.6f - Frame rate: %d\r", GetFrameTime(), GetFPS());
     }
 }
 
@@ -740,17 +752,29 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
             {
                 high_score = max(score, high_score);
                 Entity *player = e1;
+                Entity *enemy = e2;
                 if (e2->props.type == PLAYER)
                 {
                     player = e2;
+                    enemy = e1;
                 }
                 if (player->health > 0)
                 {
-                    player->health--;
+                    // TODO(nick):
+                    // - this is probably not the base way of handling it, but we need a way of
+                    //   apply damange once per second
+                    // - problem here with initial touch by enemy - doesn't apply damage,
+                    // - this probably needs to be based on the frameCounter
+                    //   -> hit once, store frameCounter
+                    //   -> second hits will be the fps from that previous frameCount
+                   if ((GlobalGameState.frameCounter % GetFPS()) == 0)
+                    {
+                        player->health -= enemy->baseDamage;
+                    }
                 }
                 else
                 {
-                    ResetGame();
+                    ResetGame(&GlobalGameState);
                 }
                // return;
             }

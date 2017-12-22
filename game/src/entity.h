@@ -53,6 +53,7 @@ typedef struct _entity
     int height;
     int width;
     int health;
+    int baseDamage;
     Item items[MAX_ITEM_SLOT];
 } Entity;
 
@@ -82,6 +83,7 @@ EntityZeroed()
         .height = 0,
         .width = 0,
         .health = 0,
+        .baseDamage = 0,
         .items = { 0, 0, 0, },
     };
     return result;
