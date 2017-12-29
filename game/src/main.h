@@ -31,12 +31,12 @@
 #define ENEMY_DEFAULT_SPEED             1.5f
 #define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
 #define ENEMY_DEFAULT_SPEED_DECAY       0.97f
-#define ENEMY_BASE_HEALTH               100
+#define ENEMY_BASE_HEALTH               30
 #define ENEMY_BASE_DAMAGE               5
-#define ENEMY_HEALTH                    3
 
-#define BULLET_DEFAULT_SIZE 5.0f
-#define BULLET_DEFAULT_SPEED 10.0f
+#define BULLET_BASE_DAMAGE      10
+#define BULLET_DEFAULT_SIZE     5.0f
+#define BULLET_DEFAULT_SPEED    10.0f
 
 #define LEVEL_SIZE 100
 

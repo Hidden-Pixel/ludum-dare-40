@@ -138,18 +138,25 @@ GetBullet(Entity *spawnEntity)
         .color = RED,
         .maxVelocity = BULLET_DEFAULT_SPEED,
         .width = BULLET_DEFAULT_SIZE,
-        .height = BULLET_DEFAULT_SIZE
+        .height = BULLET_DEFAULT_SIZE,
+        .baseDamage = BULLET_BASE_DAMAGE,
     };
+
     bullet.position = Vector2Zero();
+
     bullet.position.x = (spawnEntity->direction.x > spawnEntity->position.x) ?
         spawnEntity->position.x + (spawnEntity->width/2) :
         spawnEntity->position.x - (spawnEntity->width/2);
+
     bullet.position.y = (spawnEntity->direction.y > spawnEntity->position.y) ?
         spawnEntity->position.y + (spawnEntity->height/2) :
         spawnEntity->position.y - (spawnEntity->height/2);
+
     bullet.direction = (Vector2) {spawnEntity->direction.x, spawnEntity->direction.y};
     bullet.velocity = Vector2Subtract(bullet.direction, bullet.position);
-    Vector2Normalize(&bullet.velocity); Vector2Scale(&bullet.velocity, bullet.maxVelocity);
+    Vector2Normalize(&bullet.velocity);
+    Vector2Scale(&bullet.velocity, bullet.maxVelocity);
+
     return bullet;
 }
 
@@ -159,8 +166,6 @@ HandlePlayerAction(EntityCollection *collection, Entity *entity)
     if (IsKeyPressed(KEY_SPACE) || IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         Entity bullet = GetBullet(entity);
-        //bullet.props.type = ENEMY;
-        //bullet.props.subType = BULLET;
         AddEntity(collection, bullet);
     }
 }

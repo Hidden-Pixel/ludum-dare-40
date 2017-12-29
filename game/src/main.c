@@ -433,6 +433,7 @@ UpdateDrawFrame(void)
         UpdateGame(1.0f, &GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
         DrawGame(&GlobalMap, &GlobalEntities, &GlobalItems, &GlobalTileTypes, &GlobalCamera);
         GlobalGameState.frameCounter++;
+        GlobalGameState.frameRateCurrent = GetFPS();
         printf("Frame time: %6.6f - Frame rate: %d\r", GetFrameTime(), GetFPS());
     }
 }
@@ -717,23 +718,25 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
                 continue;
             }
 
-            // TODO(nick): could probably clean this up a bit with nested ifs instead of a bunch of &&'s
-            // weapon to enemy collision or enemy to weapon collision
             if (((e1->props.type == ENEMY && e1->props.subType == BULLET) && (e2->props.type == ENEMY && e2->props.subType != BULLET)) ||
                 ((e2->props.type == ENEMY && e2->props.subType == BULLET) && (e1->props.type == ENEMY && e1->props.subType != BULLET)))
             {
                 int bulletIndex = j;
                 int enemyIndex = i;
                 Entity *enemy = e1;
-                // TODO(nick): subtype check is probably the only thing needed here!
-                if (e2->props.type == ENEMY && e2->props.subType != BULLET)
+                Entity *bullet = e2;
+                if (e2->props.subType != BULLET)
                 {
                     enemy = e2;
+                    bullet = e1;
                     bulletIndex = i;
                     enemyIndex = j;
                 }
+                // apply damage to entiy enemy
+                enemy->health -= (bullet->baseDamage);
+                // remove the entity bullet
                 RemoveEntity(gameEntities, bulletIndex);
-                if (rand() % ENEMY_HEALTH == 0)
+                if (enemy->health <= 0)
                 {
                     RemoveEntity(gameEntities, enemyIndex);
                     score++;
@@ -747,9 +750,12 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
 
             // NOTE(nick): bullets being spawned as entity enemies kind of messes up this check a bit!
             // maybe rethink the bullets?
+            int currentHitFrame = 0;
+            local_persist int lastHitFrame = 0;
             if (((e1->props.type == ENEMY && e1->props.subType != BULLET) && e2->props.type == PLAYER) ||
-                (e1->props.type == PLAYER && (e2->props.type == ENEMY && e2->props.subType != BULLET)))
+                 (e1->props.type == PLAYER && (e2->props.type == ENEMY && e2->props.subType != BULLET)))
             {
+                currentHitFrame = GlobalGameState.frameCounter;
                 high_score = max(score, high_score);
                 Entity *player = e1;
                 Entity *enemy = e2;
@@ -760,23 +766,18 @@ ResolveEntityCollisions(TileMap *gameMap, EntityCollection *gameEntities)
                 }
                 if (player->health > 0)
                 {
-                    // TODO(nick):
-                    // - this is probably not the base way of handling it, but we need a way of
-                    //   apply damange once per second
-                    // - problem here with initial touch by enemy - doesn't apply damage,
-                    // - this probably needs to be based on the frameCounter
-                    //   -> hit once, store frameCounter
-                    //   -> second hits will be the fps from that previous frameCount
-                   if ((GlobalGameState.frameCounter % GetFPS()) == 0)
+                    if ((currentHitFrame - lastHitFrame) > GlobalGameState.frameRateCurrent)
                     {
                         player->health -= enemy->baseDamage;
+                        lastHitFrame = currentHitFrame;
                     }
                 }
                 else
                 {
                     ResetGame(&GlobalGameState);
+                    currentHitFrame = 0;
+                    lastHitFrame = 0;
                 }
-               // return;
             }
 
             //definite collision
