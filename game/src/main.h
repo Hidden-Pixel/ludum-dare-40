@@ -6,8 +6,6 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__ 1
 
-#include "raylib.h"
-
 #define global_variable     static
 #define internal            static
 #define local_persist       static
@@ -26,17 +24,23 @@
 #define PLAYER_SPEED            8.0f
 #define PLAYER_SPEED_INCREMENT  0.25f
 #define PLAYER_SPEED_DECAY      0.95f
+#define PLAYER_BASE_HEALTH      100
+#define PLAYER_BASE_DAMAGE      20
 
 #define ENEMY_DEFAULT_SIZE              20.0f
 #define ENEMY_DEFAULT_SPEED             1.5f
 #define ENEMY_DEFAULT_SPEED_INCREMENT   0.25f
 #define ENEMY_DEFAULT_SPEED_DECAY       0.97f
-#define ENEMY_HEALTH 3
+#define ENEMY_BASE_HEALTH               30
+#define ENEMY_BASE_DAMAGE               5
 
-#define BULLET_DEFAULT_SIZE 5.0f
-#define BULLET_DEFAULT_SPEED 10.0f
+#define BULLET_BASE_DAMAGE      10
+#define BULLET_DEFAULT_SIZE     5.0f
+#define BULLET_DEFAULT_SPEED    10.0f
 
 #define LEVEL_SIZE 100
+
+#define FRAME_RATE_TARGET 60
 
 #ifndef max
 internal inline int
