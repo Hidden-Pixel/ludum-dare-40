@@ -1,0 +1,3 @@
+[submodule "game/src/libs/raylib"]
+	path = game/src/libs/raylib
+	url = https://github.com/alexBraidwood/raylib

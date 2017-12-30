@@ -26,7 +26,9 @@ Project uses following libraries:
 - Build Script: build-win32.bat
 
 #### Linux/Mac
-TODO(nick)
+- Compiler: GCC >= 5.0 or Clang >= 3.4
+- CMake version >= 3.8
+- Building from cloned directory: `mkdir build && cd build && cmake .. && make`
 
 #### Web
 - SDK: emcscriptensdk
